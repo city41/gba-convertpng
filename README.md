@@ -63,6 +63,14 @@ At the root of the json spec you can add `format` to specify C or pyz80 output.
 
 ### C output
 
+```json
+{
+  "outputDir": "./output",
+  "format": "C",
+  "sprites": [
+    ...
+```
+
 C output is a standard C array, either bytes (tile data) or words (palettes). For example with the above json spec, the C output for the cursor palette would be `cursor.palette.c.inc`, and the contents would be
 
 ```C
@@ -83,6 +91,14 @@ const u16 cursorPalette[] =
 (I do almost no C development, so the C output might not be ideal. Let me know if you have any ideas here.)
 
 ### pyz80 output
+
+```json
+{
+  "outputDir": "./output",
+  "format": "pyz80",
+  "sprites": [
+    ...
+```
 
 If you specify "pyz80" as the `format`, the output will look like this, for example `cursor.palette.asm`
 
