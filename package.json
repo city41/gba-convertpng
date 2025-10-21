@@ -1,0 +1,9 @@
+{
+  "name": "gba-convertpng",
+  "version": "0.0.0",
+  "description": "Converts png images to GBA tile format",
+  "main": "index.js",
+  "repository": "github.com/city41/gba-convertpng",
+  "author": "Matt Greer <matt.e.greer@gmail.com>",
+  "license": "MIT"
+}
