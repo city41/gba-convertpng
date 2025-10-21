@@ -2,7 +2,9 @@
 
 This is a nodejs based tool for converting png images to the tile data format used in GBA games.
 
-HEADS UP: I make games for the e-Reader, and so far have not done mainstream GBA development. So possibly this tool is missing things for GBA dev. If so, please let me know.
+**HEADS UP #1:** I make games for the e-Reader, and so far have not done mainstream GBA development. So possibly this tool is missing things for GBA dev. If so, please let me know.
+
+**HEADS UP #2:** This is a very simple tool that can only do a few simple things. If you want a lot of control over your graphics, you probably want to use [Grit](https://www.coranac.com/man/grit/html/grit.htm). Maybe someday convertpng will expand enough to be a good alternative to Grit.
 
 ## Installation
 
