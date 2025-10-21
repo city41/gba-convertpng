@@ -105,7 +105,7 @@ const u16 cursorPalette[] =
 If you specify "pyz80" as the `format`, the output will look like this, for example `cursor.palette.asm`
 
 ```asm
-dw 0x7c1f,0x28c4,0x7fff,0x76d2
+dw 0x7c1f,0x28c4,0x7fff,0x76d2,0,0,0,0,0,0,0,0,0,0,0,0
 ```
 
 The only difference from asz80 is the lack of the leading period.
