@@ -1,0 +1,27 @@
+{
+    "name": "@types/imagemagick",
+    "version": "0.0.35",
+    "description": "TypeScript definitions for imagemagick",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/imagemagick",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Carlos Ballesteros Velasco",
+            "githubUsername": "soywiz",
+            "url": "https://github.com/soywiz"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/imagemagick"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/node": "*"
+    },
+    "typesPublisherContentHash": "78718daa29b9b559ee1b5b71ce2aa4d922e3ec486ef38e1041c686f23282c04b",
+    "typeScriptVersion": "4.5"
+}

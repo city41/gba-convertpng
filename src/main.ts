@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import * as path from "node:path";
 import * as fsp from "fs/promises";
 import { ImportedJsonSpec, JsonSpec } from "./types";
@@ -139,7 +141,7 @@ if (require.main === module) {
   const [_tsNode, _convertpng, jsonSpecPath] = process.argv;
 
   if (!jsonSpecPath) {
-    console.error("usage: ts-node convertpng/main.ts <json-spec-path>");
+    console.error("usage: gba-convertpng <json-spec-path>");
     process.exit(1);
   }
 
