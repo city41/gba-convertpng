@@ -2,7 +2,7 @@
 
 import * as path from "node:path";
 import * as fsp from "fs/promises";
-import { ImportedJsonSpec, JsonSpec } from "./types";
+import { Format, ImportedJsonSpec, JsonSpec } from "./types";
 import { isBasicSpriteSpec, processSprite } from "./sprite";
 import { processBackground } from "./background";
 
@@ -51,11 +51,19 @@ function hydrateJsonSpec(jsonSpecPath: string): JsonSpec {
   };
 }
 
+const formatToExt: Record<Format, string> = {
+  C: "c.inc",
+  asz80: "asm",
+  z80: "asm",
+  pyz80: "asm",
+  bin: "bin",
+};
+
 async function main(jsonSpec: JsonSpec) {
   if (jsonSpec.format === "bin") {
     throw new Error("convertpng does not support bin format");
   }
-  const ext = jsonSpec.format === "z80" ? "asm" : "c.inc";
+  const ext = formatToExt[jsonSpec.format];
 
   for (const sprite of jsonSpec.sprites) {
     const processResult = await processSprite(
@@ -115,7 +123,7 @@ async function main(jsonSpec: JsonSpec) {
   }
 
   for (const bg of jsonSpec.backgrounds) {
-    const processResult = await processBackground(bg);
+    const processResult = await processBackground(bg, jsonSpec.format);
 
     const fileRoot = path.basename(bg.file, path.extname(bg.file));
     const tilesAsmPath = path.resolve(

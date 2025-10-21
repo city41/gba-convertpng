@@ -82,11 +82,18 @@ function hydrateJsonSpec(jsonSpecPath) {
         }),
     };
 }
+const formatToExt = {
+    C: "c.inc",
+    asz80: "asm",
+    z80: "asm",
+    pyz80: "asm",
+    bin: "bin",
+};
 async function main(jsonSpec) {
     if (jsonSpec.format === "bin") {
         throw new Error("convertpng does not support bin format");
     }
-    const ext = jsonSpec.format === "z80" ? "asm" : "c.inc";
+    const ext = formatToExt[jsonSpec.format];
     for (const sprite of jsonSpec.sprites) {
         const processResult = await (0, sprite_1.processSprite)(sprite, jsonSpec.format, sprite.forcePalette);
         if ((0, sprite_1.isBasicSpriteSpec)(sprite)) {
@@ -112,7 +119,7 @@ async function main(jsonSpec) {
         }
     }
     for (const bg of jsonSpec.backgrounds) {
-        const processResult = await (0, background_1.processBackground)(bg);
+        const processResult = await (0, background_1.processBackground)(bg, jsonSpec.format);
         const fileRoot = path.basename(bg.file, path.extname(bg.file));
         const tilesAsmPath = path.resolve(jsonSpec.outputDir, `${fileRoot}.tiles.asm`);
         const paletteAsmPath = path.resolve(jsonSpec.outputDir, `${fileRoot}.palette.asm`);

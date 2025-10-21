@@ -1,6 +1,16 @@
 import { toHexByte, toHexWord } from "./toHex";
+import { Format } from "./types";
 
-function toC(data: number[], width: "b" | "w", numbersPerRow: number): string {
+function toC(
+  data: number[],
+  width: "b" | "w",
+  numbersPerRow: number,
+  format: Format
+): string {
+  if (format !== "C") {
+    throw new Error(`toC: given an incompatible format (${format})`);
+  }
+
   const hexFn = width === "b" ? toHexByte : toHexWord;
 
   const rows: string[] = [];

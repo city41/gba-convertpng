@@ -9,6 +9,7 @@ const canvas_1 = require("./canvas");
 const palette_1 = require("./palette");
 const tile_1 = require("./tile");
 const isEqual_1 = __importDefault(require("lodash/isEqual"));
+const c_1 = require("./c");
 function extractMap(allTilesThatFormImage, dedupedTiles) {
     const map = [];
     allTilesThatFormImage.forEach((tile, i) => {
@@ -22,16 +23,17 @@ function extractMap(allTilesThatFormImage, dedupedTiles) {
     });
     return map;
 }
-async function processBackground(bg) {
+async function processBackground(bg, format) {
     const canvas = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(bg.file), 16);
     const palette = (0, palette_1.extractPalette)(canvas, !bg.trimPalette);
     const allTilesThatFormImage = (0, tile_1.extractTiles)(canvas, palette, 1);
     const dedupedTiles = (0, tile_1.dedupeTiles)(allTilesThatFormImage);
     const map = extractMap(allTilesThatFormImage, dedupedTiles);
+    const toSrcFun = format === "C" ? c_1.toC : asm_1.toAsm;
     return {
-        tilesAsmSrc: (0, asm_1.toAsm)(dedupedTiles.flat(1), "b", 4),
-        paletteAsmSrc: (0, asm_1.toAsm)(palette, "w", 4),
-        mapAsmSrc: (0, asm_1.toAsm)(map, "w", 8),
+        tilesAsmSrc: toSrcFun(dedupedTiles.flat(1), "b", 4, format),
+        paletteAsmSrc: toSrcFun(palette, "w", 4, format),
+        mapAsmSrc: toSrcFun(map, "w", 8, format),
     };
 }
 //# sourceMappingURL=background.js.map

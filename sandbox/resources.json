@@ -1,0 +1,16 @@
+{
+  "outputDir": "./output",
+  "format": "pyz80",
+  "sprites": [
+    {
+      "sharedPalette": [
+        {
+          "file": "cursor.png",
+          "frames": 2
+        }
+      ],
+      "name": "global",
+      "trimPalette": true
+    }
+  ]
+}

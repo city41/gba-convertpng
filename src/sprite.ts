@@ -50,13 +50,12 @@ async function processBasicSprite(
     };
   }
 
-  const tileSrcFun = format === "z80" ? toAsm : toC;
-  const paletteSrcFun = format === "z80" ? toAsm : toC;
+  const toSrcFun = format === "C" ? toC : toAsm;
 
   return {
     canvas,
-    tilesSrc: [tileSrcFun(tiles, "b", 4)],
-    paletteSrc: paletteSrcFun(palette, "w", 4),
+    tilesSrc: [toSrcFun(tiles, "b", 4, format)],
+    paletteSrc: toSrcFun(palette, "w", 4, format),
   };
 }
 
@@ -94,15 +93,14 @@ async function processSharedPaletteSprites(
     tiles.push(t);
   }
 
-  const tileSrcFun = format === "z80" ? toAsm : toC;
-  const paletteSrcFun = format === "z80" ? toAsm : toC;
+  const toSrcFun = format === "C" ? toC : toAsm;
 
   return {
     // this is useless in this scenario, but canvas
     // really only exists for the puzzle generator
     canvas: canvases[0],
-    tilesSrc: tiles.map((t) => tileSrcFun(t, "b", 4)),
-    paletteSrc: paletteSrcFun(commonPalette, "w", 4),
+    tilesSrc: tiles.map((t) => toSrcFun(t, "b", 4, format)),
+    paletteSrc: toSrcFun(commonPalette, "w", 4, format),
   };
 }
 

@@ -1,4 +1,4 @@
-export type Format = "C" | "z80" | "bin";
+export type Format = "C" | "z80" | "pyz80" | "asz80" | "bin";
 
 export type BasicSpriteSpec = {
   file: string;

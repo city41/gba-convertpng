@@ -1,9 +1,10 @@
 import { toAsm } from "./asm";
 import { createCanvasFromPath, reduceColors } from "./canvas";
 import { extractPalette } from "./palette";
-import { BackgroundSpec } from "./types";
+import { BackgroundSpec, Format } from "./types";
 import { dedupeTiles, extractTiles } from "./tile";
 import isEqual from "lodash/isEqual";
+import { toC } from "./c";
 
 type ProcessBackgroundResult = {
   tilesAsmSrc: string;
@@ -35,7 +36,8 @@ function extractMap(
 }
 
 async function processBackground(
-  bg: BackgroundSpec
+  bg: BackgroundSpec,
+  format: Format
 ): Promise<ProcessBackgroundResult> {
   const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
 
@@ -46,10 +48,12 @@ async function processBackground(
 
   const map = extractMap(allTilesThatFormImage, dedupedTiles);
 
+  const toSrcFun = format === "C" ? toC : toAsm;
+
   return {
-    tilesAsmSrc: toAsm(dedupedTiles.flat(1), "b", 4),
-    paletteAsmSrc: toAsm(palette, "w", 4),
-    mapAsmSrc: toAsm(map, "w", 8),
+    tilesAsmSrc: toSrcFun(dedupedTiles.flat(1), "b", 4, format),
+    paletteAsmSrc: toSrcFun(palette, "w", 4, format),
+    mapAsmSrc: toSrcFun(map, "w", 8, format),
   };
 }
 
