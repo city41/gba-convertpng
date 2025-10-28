@@ -4,12 +4,14 @@ export type BasicSpriteSpec = {
     frames: number;
     trimPalette?: boolean;
     forcePalette?: string;
+    transparentColor?: number;
 };
 export type SharedPaletteSpriteSpec = {
     name: string;
     trimPalette?: boolean;
     sharedPalette: BasicSpriteSpec[];
     forcePalette?: string;
+    transparentColor?: number;
 };
 export type SpriteSpec = BasicSpriteSpec | SharedPaletteSpriteSpec;
 export type BackgroundSpec = {

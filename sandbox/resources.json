@@ -10,7 +10,8 @@
         }
       ],
       "name": "global",
-      "trimPalette": true
+      "trimPalette": true,
+      "transparentColor": 0
     }
   ]
 }

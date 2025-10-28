@@ -29,6 +29,9 @@ async function processBasicSprite(sprite, format, forcedPalette) {
         };
     }
     const toSrcFun = format === "C" ? c_1.toC : asm_1.toAsm;
+    if (typeof sprite.transparentColor === "number") {
+        palette[0] = sprite.transparentColor;
+    }
     return {
         canvas,
         tilesSrc: [toSrcFun(tiles, "b", 4, format)],
@@ -55,6 +58,9 @@ async function processSharedPaletteSprites(sharedPaletteSprite, format, forcedPa
         tiles.push(t);
     }
     const toSrcFun = format === "C" ? c_1.toC : asm_1.toAsm;
+    if (typeof sharedPaletteSprite.transparentColor === "number") {
+        commonPalette[0] = sharedPaletteSprite.transparentColor;
+    }
     return {
         // this is useless in this scenario, but canvas
         // really only exists for the puzzle generator

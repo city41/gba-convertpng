@@ -5,6 +5,7 @@ export type BasicSpriteSpec = {
   frames: number;
   trimPalette?: boolean;
   forcePalette?: string;
+  transparentColor?: number;
 };
 
 export type SharedPaletteSpriteSpec = {
@@ -12,6 +13,7 @@ export type SharedPaletteSpriteSpec = {
   trimPalette?: boolean;
   sharedPalette: BasicSpriteSpec[];
   forcePalette?: string;
+  transparentColor?: number;
 };
 
 export type SpriteSpec = BasicSpriteSpec | SharedPaletteSpriteSpec;

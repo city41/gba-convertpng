@@ -52,6 +52,10 @@ async function processBasicSprite(
 
   const toSrcFun = format === "C" ? toC : toAsm;
 
+  if (typeof sprite.transparentColor === "number") {
+    palette[0] = sprite.transparentColor;
+  }
+
   return {
     canvas,
     tilesSrc: [toSrcFun(tiles, "b", 4, format)],
@@ -94,6 +98,10 @@ async function processSharedPaletteSprites(
   }
 
   const toSrcFun = format === "C" ? toC : toAsm;
+
+  if (typeof sharedPaletteSprite.transparentColor === "number") {
+    commonPalette[0] = sharedPaletteSprite.transparentColor;
+  }
 
   return {
     // this is useless in this scenario, but canvas
