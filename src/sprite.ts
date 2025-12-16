@@ -11,7 +11,7 @@ import {
   SharedPaletteSpriteSpec,
   SpriteSpec,
 } from "./types";
-import { extractPalette, reducePalettes } from "./palette";
+import { extractPalette, getForcedPalette, reducePalettes } from "./palette";
 import { extractTiles } from "./tile";
 import { Canvas } from "canvas";
 
@@ -35,7 +35,7 @@ async function processBasicSprite(
   let palette: number[];
   if (forcedPalette) {
     canvas = await forceCanvasToPalette(canvas, forcedPalette);
-    palette = extractPalette(forcedPalette, false);
+    palette = getForcedPalette(forcedPalette);
   } else {
     palette = extractPalette(canvas, !sprite.trimPalette);
   }
@@ -84,7 +84,7 @@ async function processSharedPaletteSprites(
   }
 
   const commonPalette = forcedPalette
-    ? extractPalette(forcedPalette, false)
+    ? getForcedPalette(forcedPalette)
     : reducePalettes(palettes);
 
   const tiles: number[][] = [];

@@ -3,6 +3,26 @@ import { rgbToGBA16 } from "./colors";
 
 const MAGENTA = rgbToGBA16(255, 0, 255);
 
+function getForcedPalette(c: Canvas): number[] {
+  const imageData = c.getContext("2d")!.getImageData(0, 0, c.width, c.height);
+
+  const rawPalette: number[] = [];
+
+  for (let p = 0; p < imageData.data.length; p += 4) {
+    const r = imageData.data[p];
+    const g = imageData.data[p + 1];
+    const b = imageData.data[p + 2];
+    const gbaColor = rgbToGBA16(r, g, b);
+    rawPalette.push(gbaColor);
+  }
+
+  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+  // then append magenta as the first color, to become transparent
+  const palette = [MAGENTA].concat(paletteWithoutMangenta);
+
+  return palette;
+}
+
 function extractPalette(c: Canvas, pad = true): number[] {
   const gbaColors = new Set<number>();
 
@@ -56,4 +76,4 @@ function reducePalettes(palettes: number[][]): number[] {
   return mergedPalette;
 }
 
-export { extractPalette, reducePalettes };
+export { getForcedPalette, extractPalette, reducePalettes };
