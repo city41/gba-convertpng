@@ -137,7 +137,10 @@ async function main(jsonSpec: JsonSpec) {
       jsonSpec.outputDir,
       `${fileRoot}.palette.${ext}`
     );
-    const mapAsmPath = path.resolve(jsonSpec.outputDir, `${fileRoot}.map.asm`);
+    const mapAsmPath = path.resolve(
+      jsonSpec.outputDir,
+      `${fileRoot}.map.${ext}`
+    );
 
     await fsp.writeFile(tilesAsmPath, processResult.tilesAsmSrc);
     console.log("wrote", tilesAsmPath);
