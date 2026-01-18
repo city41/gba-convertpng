@@ -126,13 +126,16 @@ async function main(jsonSpec: JsonSpec) {
     const processResult = await processBackground(bg, jsonSpec.format);
 
     const fileRoot = path.basename(bg.file, path.extname(bg.file));
+
+    const ext = formatToExt[jsonSpec.format];
+
     const tilesAsmPath = path.resolve(
       jsonSpec.outputDir,
-      `${fileRoot}.tiles.asm`
+      `${fileRoot}.tiles.${ext}`
     );
     const paletteAsmPath = path.resolve(
       jsonSpec.outputDir,
-      `${fileRoot}.palette.asm`
+      `${fileRoot}.palette.${ext}`
     );
     const mapAsmPath = path.resolve(jsonSpec.outputDir, `${fileRoot}.map.asm`);
 
