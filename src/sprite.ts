@@ -28,7 +28,7 @@ function isBasicSpriteSpec(sprite: SpriteSpec): sprite is BasicSpriteSpec {
 async function processBasicSprite(
   sprite: BasicSpriteSpec,
   format: Format,
-  forcedPalette?: Canvas
+  forcedPalette?: Canvas,
 ): Promise<ProcessSpriteResult> {
   let canvas = await reduceColors(await createCanvasFromPath(sprite.file), 16);
 
@@ -66,7 +66,7 @@ async function processBasicSprite(
 async function processSharedPaletteSprites(
   sharedPaletteSprite: SharedPaletteSpriteSpec,
   format: Format,
-  forcedPalette?: Canvas
+  forcedPalette?: Canvas,
 ): Promise<ProcessSpriteResult> {
   const canvases: Canvas[] = [];
   const palettes: number[][] = [];
@@ -74,7 +74,7 @@ async function processSharedPaletteSprites(
   for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
     let c = await reduceColors(
       await createCanvasFromPath(sharedPaletteSprite.sharedPalette[i].file),
-      16
+      16,
     );
     if (forcedPalette) {
       c = await forceCanvasToPalette(c, forcedPalette);
@@ -87,12 +87,18 @@ async function processSharedPaletteSprites(
     ? getForcedPalette(forcedPalette)
     : reducePalettes(palettes);
 
+  if (forcedPalette && !sharedPaletteSprite.trimPalette) {
+    while (commonPalette.length < 16) {
+      commonPalette.push(0);
+    }
+  }
+
   const tiles: number[][] = [];
   for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
     const t = extractTiles(
       canvases[i],
       commonPalette,
-      sharedPaletteSprite.sharedPalette[i].frames
+      sharedPaletteSprite.sharedPalette[i].frames,
     ).flat(1);
     tiles.push(t);
   }
@@ -115,7 +121,7 @@ async function processSharedPaletteSprites(
 async function processSprite(
   sprite: SpriteSpec,
   format: Format,
-  forcedPalettePath?: string
+  forcedPalettePath?: string,
 ): Promise<ProcessSpriteResult> {
   const forcedPalette = forcedPalettePath
     ? await createCanvasFromPath(forcedPalettePath)
