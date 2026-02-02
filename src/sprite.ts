@@ -87,7 +87,7 @@ async function processSharedPaletteSprites(
     ? getForcedPalette(forcedPalette)
     : reducePalettes(palettes);
 
-  if (forcedPalette && !sharedPaletteSprite.trimPalette) {
+  if (!forcedPalette && !sharedPaletteSprite.trimPalette) {
     while (commonPalette.length < 16) {
       commonPalette.push(0);
     }
