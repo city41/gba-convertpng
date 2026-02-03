@@ -185,4 +185,4 @@ git push
 git push --tags
 ```
 
-Once [the Publish action](https://github.com/city41/ereader-tools/actions/workflows/publish.yml) notices the version has changed, it will run a build and publish to npm.
+Once [the Publish action](https://github.com/city41/gba-convertpng/actions/workflows/publish.yml) notices the version has changed, it will run a build and publish to npm.
