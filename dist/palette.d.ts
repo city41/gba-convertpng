@@ -1,4 +1,7 @@
 import { Canvas } from "canvas";
 declare function extractPalette(c: Canvas, pad?: boolean): number[];
-declare function reducePalettes(palettes: number[][]): number[];
-export { extractPalette, reducePalettes };
+declare function reduceCanvases(canvases: Canvas[]): {
+    palette: number[];
+    canvas: Canvas;
+};
+export { extractPalette, reduceCanvases };

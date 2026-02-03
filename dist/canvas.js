@@ -117,7 +117,7 @@ function isMagenta(pixel) {
 }
 async function forceCanvasToPalette(canvas, palette) {
     if (palette.width !== 15) {
-        throw new Error("forceCanvasToPalette: palette needs to be 15px wide (it should not have zero/magenta in it)");
+        throw new Error(`forceCanvasToPalette: palette needs to be 15px wide (got ${palette.width}, it should not have zero/magenta in it)`);
     }
     if (palette.height !== 1) {
         throw new Error("forceCanvasToPalette: palette needs to be 1px tall");

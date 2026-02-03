@@ -5,7 +5,7 @@ function toAsm(
   data: number[],
   width: "b" | "w",
   numbersPerRow: number,
-  format: Format
+  format: Format,
 ): string {
   if (format !== "asz80" && format !== "z80" && format !== "pyz80") {
     throw new Error(`toAsm: given an incompatible format (${format})`);

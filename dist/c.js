@@ -1,12 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toC = toC;
+exports.toCinc = toCinc;
+exports.toCc = toCc;
+exports.toCh = toCh;
 const toHex_1 = require("./toHex");
-function toC(data, width, numbersPerRow, format) {
-    if (format !== "C") {
-        throw new Error(`toC: given an incompatible format (${format})`);
-    }
-    const hexFn = width === "b" ? toHex_1.toHexByte : toHex_1.toHexWord;
+const widthToDataType = {
+    b: "u8",
+    w: "u16",
+    dw: "u32",
+};
+const widthToSize = {
+    b: 1,
+    w: 2,
+    dw: 4,
+};
+const widthToHexFunction = {
+    b: toHex_1.toHexByte,
+    w: toHex_1.toHexWord,
+    dw: toHex_1.toHexDoubleWord,
+};
+function toCinc(data, width, numbersPerRow, bracketsOnOwnLine = false) {
+    const hexFn = widthToHexFunction[width];
     const rows = [];
     let row = [];
     for (let i = 0; i < data.length; ++i) {
@@ -17,6 +31,33 @@ function toC(data, width, numbersPerRow, format) {
         row.push(hexFn(data[i]));
     }
     rows.push(row.join(","));
-    return `{ ${rows.join("\r\n")} }`;
+    if (bracketsOnOwnLine) {
+        return `{
+${rows.join("\r\n")}
+}`;
+    }
+    else {
+        return `{ ${rows.join("\r\n")} }`;
+    }
+}
+function toCc(data, width, numbersPerRow, variableName, fileNameRoot) {
+    const dataType = widthToDataType[width];
+    const dataSize = widthToSize[width];
+    const entries = toCinc(data, width, numbersPerRow, true);
+    const src = `#include "${fileNameRoot}.h"
+
+const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries.length * dataSize}; `;
+    return src;
+}
+function toCh(data, width, variableName) {
+    const dataType = widthToDataType[width];
+    const count = data.length;
+    const src = `#pragma once
+#include <tonc.h>
+
+#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * 4}
+
+extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_LENGTH];`;
+    return src;
 }
 //# sourceMappingURL=c.js.map

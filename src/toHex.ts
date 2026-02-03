@@ -13,3 +13,11 @@ export function toHexWord(num: number): string {
 
   return `0x${filler}${rawHex}`;
 }
+
+export function toHexDoubleWord(num: number): string {
+  const rawHex = num.toString(16);
+  const neededFiller = Math.max(8 - rawHex.length, 0);
+  const filler = new Array(neededFiller).fill("0").join("");
+
+  return `0x${filler}${rawHex}`;
+}

@@ -1,83 +1,92 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isBasicSpriteSpec = isBasicSpriteSpec;
-exports.processSprite = processSprite;
-const asm_1 = require("./asm");
-const c_1 = require("./c");
+exports.processBasicSprite = processBasicSprite;
+exports.processSharedPaletteSprites = processSharedPaletteSprites;
+exports.isSharedPaletteSpriteSpec = isSharedPaletteSpriteSpec;
+exports.isProcessBasicSpriteResult = isProcessBasicSpriteResult;
+exports.isProcessSharedPaletteSpritesResult = isProcessSharedPaletteSpritesResult;
 const canvas_1 = require("./canvas");
 const palette_1 = require("./palette");
 const tile_1 = require("./tile");
+function isSharedPaletteSpriteSpec(obj) {
+    return typeof obj === "object" && obj !== null && "name" in obj;
+}
+function isProcessBasicSpriteResult(obj) {
+    return (obj !== null &&
+        typeof obj === "object" &&
+        "sprite" in obj &&
+        typeof obj.sprite === "object" &&
+        obj.sprite !== null &&
+        "file" in obj.sprite);
+}
+function isProcessSharedPaletteSpritesResult(obj) {
+    return (obj !== null &&
+        typeof obj === "object" &&
+        "sprite" in obj &&
+        isSharedPaletteSpriteSpec(obj.sprite));
+}
 function isBasicSpriteSpec(sprite) {
     return "file" in sprite;
 }
-async function processBasicSprite(sprite, format, forcedPalette) {
+async function processBasicSprite(sprite, forcedPaletteOverride) {
     let canvas = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(sprite.file), 16);
     let palette;
-    if (forcedPalette) {
-        canvas = await (0, canvas_1.forceCanvasToPalette)(canvas, forcedPalette);
-        palette = (0, palette_1.extractPalette)(forcedPalette, false);
+    if (forcedPaletteOverride || sprite.forcePalette) {
+        const forcedPaletteCanvas = forcedPaletteOverride ??
+            (await (0, canvas_1.createCanvasFromPath)(sprite.forcePalette));
+        canvas = await (0, canvas_1.forceCanvasToPalette)(canvas, forcedPaletteCanvas);
+        palette = (0, palette_1.extractPalette)(forcedPaletteCanvas, false);
     }
     else {
         palette = (0, palette_1.extractPalette)(canvas, !sprite.trimPalette);
     }
     const tiles = (0, tile_1.extractTiles)(canvas, palette, sprite.frames).flat(1);
-    if (format === "bin") {
-        return {
-            canvas,
-            tilesSrc: tiles,
-            paletteSrc: palette,
-        };
-    }
-    const toSrcFun = format === "C" ? c_1.toC : asm_1.toAsm;
-    if (typeof sprite.transparentColor === "number") {
-        palette[0] = sprite.transparentColor;
-    }
     return {
+        sprite,
         canvas,
-        tilesSrc: [toSrcFun(tiles, "b", 4, format)],
-        paletteSrc: toSrcFun(palette, "w", 4, format),
+        tiles,
+        palette,
     };
 }
-async function processSharedPaletteSprites(sharedPaletteSprite, format, forcedPalette) {
+async function processSharedPaletteSprites(sharedPaletteSprite) {
+    const subsprites = [];
     const canvases = [];
-    const palettes = [];
+    const forcedPalette = sharedPaletteSprite.forcePalette
+        ? await (0, canvas_1.createCanvasFromPath)(sharedPaletteSprite.forcePalette)
+        : undefined;
     for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
         let c = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(sharedPaletteSprite.sharedPalette[i].file), 16);
         if (forcedPalette) {
             c = await (0, canvas_1.forceCanvasToPalette)(c, forcedPalette);
         }
         canvases.push(c);
-        palettes.push((0, palette_1.extractPalette)(c, !sharedPaletteSprite.trimPalette));
+        subsprites.push(sharedPaletteSprite.sharedPalette[i]);
     }
-    const commonPalette = forcedPalette
-        ? (0, palette_1.extractPalette)(forcedPalette, false)
-        : (0, palette_1.reducePalettes)(palettes);
-    const tiles = [];
-    for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
-        const t = (0, tile_1.extractTiles)(canvases[i], commonPalette, sharedPaletteSprite.sharedPalette[i].frames).flat(1);
-        tiles.push(t);
+    const { palette: commonPalette, canvas: forcedPaletteCanvas } = forcedPalette
+        ? {
+            palette: (0, palette_1.extractPalette)(forcedPalette, false),
+            canvas: forcedPalette,
+        }
+        : (0, palette_1.reduceCanvases)(canvases);
+    if (!forcedPalette && !sharedPaletteSprite.trimPalette) {
+        while (commonPalette.length < 16) {
+            commonPalette.push(0);
+        }
     }
-    const toSrcFun = format === "C" ? c_1.toC : asm_1.toAsm;
+    const subspriteResults = [];
+    for (const subsprite of subsprites) {
+        const subspriteResult = await processBasicSprite(subsprite, forcedPaletteCanvas);
+        const { palette, ...subspriteResultWithoutPalette } = subspriteResult;
+        subspriteResults.push(subspriteResultWithoutPalette);
+    }
     if (typeof sharedPaletteSprite.transparentColor === "number") {
         commonPalette[0] = sharedPaletteSprite.transparentColor;
     }
     return {
-        // this is useless in this scenario, but canvas
-        // really only exists for the puzzle generator
-        canvas: canvases[0],
-        tilesSrc: tiles.map((t) => toSrcFun(t, "b", 4, format)),
-        paletteSrc: toSrcFun(commonPalette, "w", 4, format),
+        sprite: sharedPaletteSprite,
+        palette: commonPalette,
+        subsprites: subspriteResults,
     };
-}
-async function processSprite(sprite, format, forcedPalettePath) {
-    const forcedPalette = forcedPalettePath
-        ? await (0, canvas_1.createCanvasFromPath)(forcedPalettePath)
-        : undefined;
-    if (isBasicSpriteSpec(sprite)) {
-        return processBasicSprite(sprite, format, forcedPalette);
-    }
-    else {
-        return processSharedPaletteSprites(sprite, format, forcedPalette);
-    }
 }
 //# sourceMappingURL=sprite.js.map

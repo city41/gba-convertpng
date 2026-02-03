@@ -1,17 +1,30 @@
-import { toHexByte, toHexWord } from "./toHex";
-import { Format } from "./types";
+import { toHexByte, toHexDoubleWord, toHexWord } from "./toHex";
+import { Width } from "./types";
 
-function toC(
+const widthToDataType: Record<Width, string> = {
+  b: "u8",
+  w: "u16",
+  dw: "u32",
+};
+const widthToSize: Record<Width, number> = {
+  b: 1,
+  w: 2,
+  dw: 4,
+};
+
+const widthToHexFunction: Record<Width, (a: number) => string> = {
+  b: toHexByte,
+  w: toHexWord,
+  dw: toHexDoubleWord,
+};
+
+function toCinc(
   data: number[],
-  width: "b" | "w",
+  width: Width,
   numbersPerRow: number,
-  format: Format
+  bracketsOnOwnLine = false,
 ): string {
-  if (format !== "C") {
-    throw new Error(`toC: given an incompatible format (${format})`);
-  }
-
-  const hexFn = width === "b" ? toHexByte : toHexWord;
+  const hexFn = widthToHexFunction[width];
 
   const rows: string[] = [];
 
@@ -27,7 +40,46 @@ function toC(
 
   rows.push(row.join(","));
 
-  return `{ ${rows.join("\r\n")} }`;
+  if (bracketsOnOwnLine) {
+    return `{
+${rows.join("\r\n")}
+}`;
+  } else {
+    return `{ ${rows.join("\r\n")} }`;
+  }
 }
 
-export { toC };
+function toCc(
+  data: number[],
+  width: "b" | "w" | "dw",
+  numbersPerRow: number,
+  variableName: string,
+  fileNameRoot: string,
+): string {
+  const dataType = widthToDataType[width];
+  const dataSize = widthToSize[width];
+
+  const entries = toCinc(data, width, numbersPerRow, true);
+
+  const src = `#include "${fileNameRoot}.h"
+
+const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries.length * dataSize}; `;
+
+  return src;
+}
+
+function toCh(data: number[], width: Width, variableName: string): string {
+  const dataType = widthToDataType[width];
+  const count = data.length;
+
+  const src = `#pragma once
+#include <tonc.h>
+
+#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * 4}
+
+extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_LENGTH];`;
+
+  return src;
+}
+
+export { toCinc, toCc, toCh };

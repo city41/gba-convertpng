@@ -1,20 +1,32 @@
-import { toAsm } from "./asm";
 import { createCanvasFromPath, reduceColors } from "./canvas";
 import { extractPalette } from "./palette";
-import { BackgroundSpec, Format } from "./types";
+import { BackgroundSpec } from "./types";
 import { dedupeTiles, extractTiles } from "./tile";
 import isEqual from "lodash/isEqual";
-import { toC } from "./c";
 
 type ProcessBackgroundResult = {
-  tilesAsmSrc: string;
-  paletteAsmSrc: string;
-  mapAsmSrc: string;
+  background: BackgroundSpec;
+  tiles: number[];
+  palette: number[];
+  map: number[];
 };
+
+function isProcessBackgroundResult(
+  obj: unknown,
+): obj is ProcessBackgroundResult {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "background" in obj &&
+    typeof obj.background === "object" &&
+    obj.background !== null &&
+    "file" in obj.background
+  );
+}
 
 function extractMap(
   allTilesThatFormImage: number[][],
-  dedupedTiles: number[][]
+  dedupedTiles: number[][],
 ): number[] {
   const map: number[] = [];
 
@@ -25,7 +37,7 @@ function extractMap(
 
     if (index < 0) {
       throw new Error(
-        "extractMap: failed to find a matching tile in the deduped tile set"
+        "extractMap: failed to find a matching tile in the deduped tile set",
       );
     }
 
@@ -37,7 +49,6 @@ function extractMap(
 
 async function processBackground(
   bg: BackgroundSpec,
-  format: Format
 ): Promise<ProcessBackgroundResult> {
   const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
 
@@ -48,13 +59,13 @@ async function processBackground(
 
   const map = extractMap(allTilesThatFormImage, dedupedTiles);
 
-  const toSrcFun = format === "C" ? toC : toAsm;
-
   return {
-    tilesAsmSrc: toSrcFun(dedupedTiles.flat(1), "b", 4, format),
-    paletteAsmSrc: toSrcFun(palette, "w", 4, format),
-    mapAsmSrc: toSrcFun(map, "w", 8, format),
+    background: bg,
+    tiles: dedupedTiles.flat(1),
+    palette,
+    map,
   };
 }
 
-export { processBackground };
+export { processBackground, isProcessBackgroundResult };
+export type { ProcessBackgroundResult };

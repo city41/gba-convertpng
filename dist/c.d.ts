@@ -1,3 +1,5 @@
-import { Format } from "./types";
-declare function toC(data: number[], width: "b" | "w", numbersPerRow: number, format: Format): string;
-export { toC };
+import { Width } from "./types";
+declare function toCinc(data: number[], width: Width, numbersPerRow: number, bracketsOnOwnLine?: boolean): string;
+declare function toCc(data: number[], width: "b" | "w" | "dw", numbersPerRow: number, variableName: string, fileNameRoot: string): string;
+declare function toCh(data: number[], width: Width, variableName: string): string;
+export { toCinc, toCc, toCh };

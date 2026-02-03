@@ -1,25 +1,55 @@
-import { toAsm } from "./asm";
-import { toC } from "./c";
 import {
   createCanvasFromPath,
   forceCanvasToPalette,
   reduceColors,
 } from "./canvas";
-import {
-  BasicSpriteSpec,
-  Format,
-  SharedPaletteSpriteSpec,
-  SpriteSpec,
-} from "./types";
-import { extractPalette, getForcedPalette, reducePalettes } from "./palette";
+import { BasicSpriteSpec, SharedPaletteSpriteSpec, SpriteSpec } from "./types";
+import { extractPalette, reduceCanvases } from "./palette";
 import { extractTiles } from "./tile";
 import { Canvas } from "canvas";
 
-type ProcessSpriteResult = {
+type ProcessBasicSpriteResult = {
+  sprite: BasicSpriteSpec;
   canvas: Canvas;
-  tilesSrc: string[] | number[];
-  paletteSrc: string | number[];
+  tiles: number[];
+  palette?: number[];
 };
+
+type ProcessSharedPaletteSpritesResult = {
+  sprite: SharedPaletteSpriteSpec;
+  subsprites: ProcessBasicSpriteResult[];
+  palette: number[];
+};
+
+function isSharedPaletteSpriteSpec(
+  obj: unknown,
+): obj is SharedPaletteSpriteSpec {
+  return typeof obj === "object" && obj !== null && "name" in obj;
+}
+
+function isProcessBasicSpriteResult(
+  obj: unknown,
+): obj is ProcessBasicSpriteResult {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "sprite" in obj &&
+    typeof obj.sprite === "object" &&
+    obj.sprite !== null &&
+    "file" in obj.sprite
+  );
+}
+
+function isProcessSharedPaletteSpritesResult(
+  obj: unknown,
+): obj is ProcessSharedPaletteSpritesResult {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "sprite" in obj &&
+    isSharedPaletteSpriteSpec(obj.sprite)
+  );
+}
 
 function isBasicSpriteSpec(sprite: SpriteSpec): sprite is BasicSpriteSpec {
   return "file" in sprite;
@@ -27,49 +57,40 @@ function isBasicSpriteSpec(sprite: SpriteSpec): sprite is BasicSpriteSpec {
 
 async function processBasicSprite(
   sprite: BasicSpriteSpec,
-  format: Format,
-  forcedPalette?: Canvas,
-): Promise<ProcessSpriteResult> {
+  forcedPaletteOverride?: Canvas,
+): Promise<ProcessBasicSpriteResult> {
   let canvas = await reduceColors(await createCanvasFromPath(sprite.file), 16);
 
   let palette: number[];
-  if (forcedPalette) {
-    canvas = await forceCanvasToPalette(canvas, forcedPalette);
-    palette = getForcedPalette(forcedPalette);
+  if (forcedPaletteOverride || sprite.forcePalette) {
+    const forcedPaletteCanvas =
+      forcedPaletteOverride ??
+      (await createCanvasFromPath(sprite.forcePalette!));
+    canvas = await forceCanvasToPalette(canvas, forcedPaletteCanvas);
+    palette = extractPalette(forcedPaletteCanvas, false);
   } else {
     palette = extractPalette(canvas, !sprite.trimPalette);
   }
 
   const tiles = extractTiles(canvas, palette, sprite.frames).flat(1);
 
-  if (format === "bin") {
-    return {
-      canvas,
-      tilesSrc: tiles,
-      paletteSrc: palette,
-    };
-  }
-
-  const toSrcFun = format === "C" ? toC : toAsm;
-
-  if (typeof sprite.transparentColor === "number") {
-    palette[0] = sprite.transparentColor;
-  }
-
   return {
+    sprite,
     canvas,
-    tilesSrc: [toSrcFun(tiles, "b", 4, format)],
-    paletteSrc: toSrcFun(palette, "w", 4, format),
+    tiles,
+    palette,
   };
 }
 
 async function processSharedPaletteSprites(
   sharedPaletteSprite: SharedPaletteSpriteSpec,
-  format: Format,
-  forcedPalette?: Canvas,
-): Promise<ProcessSpriteResult> {
+): Promise<ProcessSharedPaletteSpritesResult> {
+  const subsprites: BasicSpriteSpec[] = [];
   const canvases: Canvas[] = [];
-  const palettes: number[][] = [];
+
+  const forcedPalette = sharedPaletteSprite.forcePalette
+    ? await createCanvasFromPath(sharedPaletteSprite.forcePalette)
+    : undefined;
 
   for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
     let c = await reduceColors(
@@ -80,12 +101,15 @@ async function processSharedPaletteSprites(
       c = await forceCanvasToPalette(c, forcedPalette);
     }
     canvases.push(c);
-    palettes.push(extractPalette(c, !sharedPaletteSprite.trimPalette));
+    subsprites.push(sharedPaletteSprite.sharedPalette[i]);
   }
 
-  const commonPalette = forcedPalette
-    ? getForcedPalette(forcedPalette)
-    : reducePalettes(palettes);
+  const { palette: commonPalette, canvas: forcedPaletteCanvas } = forcedPalette
+    ? {
+        palette: extractPalette(forcedPalette, false),
+        canvas: forcedPalette,
+      }
+    : reduceCanvases(canvases);
 
   if (!forcedPalette && !sharedPaletteSprite.trimPalette) {
     while (commonPalette.length < 16) {
@@ -93,45 +117,34 @@ async function processSharedPaletteSprites(
     }
   }
 
-  const tiles: number[][] = [];
-  for (let i = 0; i < sharedPaletteSprite.sharedPalette.length; ++i) {
-    const t = extractTiles(
-      canvases[i],
-      commonPalette,
-      sharedPaletteSprite.sharedPalette[i].frames,
-    ).flat(1);
-    tiles.push(t);
-  }
+  const subspriteResults: ProcessBasicSpriteResult[] = [];
 
-  const toSrcFun = format === "C" ? toC : toAsm;
+  for (const subsprite of subsprites) {
+    const subspriteResult = await processBasicSprite(
+      subsprite,
+      forcedPaletteCanvas,
+    );
+    const { palette, ...subspriteResultWithoutPalette } = subspriteResult;
+    subspriteResults.push(subspriteResultWithoutPalette);
+  }
 
   if (typeof sharedPaletteSprite.transparentColor === "number") {
     commonPalette[0] = sharedPaletteSprite.transparentColor;
   }
 
   return {
-    // this is useless in this scenario, but canvas
-    // really only exists for the puzzle generator
-    canvas: canvases[0],
-    tilesSrc: tiles.map((t) => toSrcFun(t, "b", 4, format)),
-    paletteSrc: toSrcFun(commonPalette, "w", 4, format),
+    sprite: sharedPaletteSprite,
+    palette: commonPalette,
+    subsprites: subspriteResults,
   };
 }
 
-async function processSprite(
-  sprite: SpriteSpec,
-  format: Format,
-  forcedPalettePath?: string,
-): Promise<ProcessSpriteResult> {
-  const forcedPalette = forcedPalettePath
-    ? await createCanvasFromPath(forcedPalettePath)
-    : undefined;
-  if (isBasicSpriteSpec(sprite)) {
-    return processBasicSprite(sprite, format, forcedPalette);
-  } else {
-    return processSharedPaletteSprites(sprite, format, forcedPalette);
-  }
-}
-
-export { isBasicSpriteSpec, processSprite };
-export type { ProcessSpriteResult };
+export {
+  isBasicSpriteSpec,
+  processBasicSprite,
+  processSharedPaletteSprites,
+  isSharedPaletteSpriteSpec,
+  isProcessBasicSpriteResult,
+  isProcessSharedPaletteSpritesResult,
+};
+export type { ProcessBasicSpriteResult, ProcessSharedPaletteSpritesResult };

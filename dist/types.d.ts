@@ -1,4 +1,5 @@
-export type Format = "C" | "z80" | "pyz80" | "asz80" | "bin";
+export type Format = "C" | "C.inc" | "z80" | "pyz80" | "asz80" | "bin";
+export type Width = "b" | "w" | "dw";
 export type BasicSpriteSpec = {
     file: string;
     frames: number;

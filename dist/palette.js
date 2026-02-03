@@ -1,9 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extractPalette = extractPalette;
-exports.reducePalettes = reducePalettes;
+exports.reduceCanvases = reduceCanvases;
+const canvas_1 = require("canvas");
 const colors_1 = require("./colors");
+const MAGENTA_24 = [255, 0, 255, 255];
 const MAGENTA = (0, colors_1.rgbToGBA16)(255, 0, 255);
+function is24BitMagenta(color) {
+    return (color.length === MAGENTA_24.length &&
+        color.every((channel, i) => channel === MAGENTA_24[i]));
+}
 function extractPalette(c, pad = true) {
     const gbaColors = new Set();
     const imageData = c.getContext("2d").getImageData(0, 0, c.width, c.height);
@@ -28,20 +34,41 @@ function extractPalette(c, pad = true) {
     }
     return palette;
 }
-function reducePalettes(palettes) {
-    const colorMap = {};
-    const mergedPalette = [];
-    for (const palette of palettes) {
-        for (const color of palette) {
-            if (!colorMap[color]) {
-                colorMap[color] = true;
-                mergedPalette.push(color);
-            }
+function reduceCanvases(canvases) {
+    const fullRgbColorMap = {};
+    for (const c of canvases) {
+        const imageData = c.getContext("2d").getImageData(0, 0, c.width, c.height);
+        for (let p = 0; p < imageData.data.length; p += 4) {
+            const colorS = `${imageData.data[p]}-${imageData.data[p + 1]}-${imageData.data[p + 2]}-${imageData.data[p + 3]}`;
+            fullRgbColorMap[colorS] = Array.from(imageData.data.slice(p, p + 4));
         }
     }
-    if (mergedPalette.length > 16) {
-        throw new Error(`reducePalette: final palette is too large: ${mergedPalette.length}`);
+    const paletteColors = Object.values(fullRgbColorMap);
+    const paletteSize = paletteColors.length;
+    if (paletteSize > 16) {
+        throw new Error(`reduceCanvasees: final palette is too large: ${paletteSize}`);
     }
-    return mergedPalette;
+    // strip out transparency/magenta
+    const opaquePaletteColors = paletteColors.filter((pc) => {
+        return pc[3] === 255 && !is24BitMagenta(pc);
+    });
+    // pad palette out to 15 colors
+    while (opaquePaletteColors.length < 15) {
+        opaquePaletteColors.push([0, 0, 0, 255]);
+    }
+    const paletteCanvas = (0, canvas_1.createCanvas)(opaquePaletteColors.length, 1);
+    const context = paletteCanvas.getContext("2d");
+    const imageData = context.getImageData(0, 0, paletteCanvas.width, paletteCanvas.height);
+    opaquePaletteColors.forEach((pcolor, i) => {
+        imageData.data[i * 4 + 0] = pcolor[0];
+        imageData.data[i * 4 + 1] = pcolor[1];
+        imageData.data[i * 4 + 2] = pcolor[2];
+        imageData.data[i * 4 + 3] = pcolor[3];
+    });
+    context.putImageData(imageData, 0, 0);
+    return {
+        palette: extractPalette(paletteCanvas),
+        canvas: paletteCanvas,
+    };
 }
 //# sourceMappingURL=palette.js.map

@@ -8,7 +8,7 @@ import nearestColor from "nearest-color";
 
 async function _reduceColorsWithMagick(
   renderedFilePath: string,
-  maxColors: number
+  maxColors: number,
 ): Promise<string> {
   const outputPath = `${renderedFilePath}.reduced.png`;
 
@@ -28,7 +28,7 @@ async function _reduceColorsWithMagick(
         } else {
           resolve(outputPath);
         }
-      }
+      },
     );
   });
 }
@@ -38,7 +38,7 @@ async function reduceColors(c: Canvas, maxColors: number): Promise<Canvas> {
   await mkdirp(tmpDir);
   const tmpPath = path.resolve(
     tmpDir,
-    `_reduceColors_${maxColors}_${Date.now()}.png`
+    `_reduceColors_${maxColors}_${Date.now()}.png`,
   );
   const b = c.toBuffer();
 
@@ -95,7 +95,7 @@ type ColorMatch = {
 
 function findNearestColor(
   pixel: Uint8ClampedArray,
-  palette: Uint8ClampedArray
+  palette: Uint8ClampedArray,
 ): Uint8ClampedArray {
   const colorsInput: ColorSpec[] = [];
 
@@ -132,11 +132,11 @@ function isMagenta(pixel: Uint8ClampedArray): boolean {
 
 async function forceCanvasToPalette(
   canvas: Canvas,
-  palette: Canvas
+  palette: Canvas,
 ): Promise<Canvas> {
   if (palette.width !== 15) {
     throw new Error(
-      "forceCanvasToPalette: palette needs to be 15px wide (it should not have zero/magenta in it)"
+      `forceCanvasToPalette: palette needs to be 15px wide (got ${palette.width}, it should not have zero/magenta in it)`,
     );
   }
 
