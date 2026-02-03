@@ -70,14 +70,15 @@ const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = $
 
 function toCh(data: number[], width: Width, variableName: string): string {
   const dataType = widthToDataType[width];
+  const dataSize = widthToSize[width];
   const count = data.length;
 
   const src = `#pragma once
 #include <tonc.h>
 
-#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * 4}
+#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * dataSize}
 
-extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_LENGTH];`;
+extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH];`;
 
   return src;
 }
