@@ -62,7 +62,7 @@ function toCc(
 
   const src = `#include "${fileNameRoot}.h"
 
-const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries}; `;
+const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entries}; `;
 
   return src;
 }
@@ -76,8 +76,9 @@ function toCh(data: number[], width: Width, variableName: string): string {
 #include <tonc.h>
 
 #define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * dataSize}
+#define ${variableName.toUpperCase()}_COUNT ${count}
 
-extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH];`;
+extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT];`;
 
   return src;
 }
