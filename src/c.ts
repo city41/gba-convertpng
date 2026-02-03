@@ -57,13 +57,12 @@ function toCc(
   fileNameRoot: string,
 ): string {
   const dataType = widthToDataType[width];
-  const dataSize = widthToSize[width];
 
   const entries = toCinc(data, width, numbersPerRow, true);
 
   const src = `#include "${fileNameRoot}.h"
 
-const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries.length * dataSize}; `;
+const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries}; `;
 
   return src;
 }
