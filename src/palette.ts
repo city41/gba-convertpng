@@ -1,9 +1,9 @@
 import { createCanvas, Canvas } from "canvas";
-import { rgbToGBA16 } from "./colors";
+import { rgbToGBA15 } from "./colors";
 
 const MAGENTA_24: number[] = [255, 0, 255, 255] as const;
 
-const MAGENTA = rgbToGBA16(255, 0, 255);
+const MAGENTA = rgbToGBA15(255, 0, 255);
 
 function is24BitMagenta(color: number[]): boolean {
   return (
@@ -26,7 +26,7 @@ function extractPalette(c: Canvas, pad = true): number[] {
     const r = imageData.data[p];
     const g = imageData.data[p + 1];
     const b = imageData.data[p + 2];
-    const gbaColor = rgbToGBA16(r, g, b);
+    const gbaColor = rgbToGBA15(r, g, b);
     gbaColors.add(gbaColor);
   }
 

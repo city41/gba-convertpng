@@ -1,15 +1,8 @@
 import { createCanvasFromPath, reduceColors } from "./canvas";
 import { extractPalette } from "./palette";
-import { BackgroundSpec } from "./types";
+import { BackgroundSpec, ProcessBackgroundResult } from "./types";
 import { dedupeTiles, extractTiles } from "./tile";
 import isEqual from "lodash/isEqual";
-
-type ProcessBackgroundResult = {
-  background: BackgroundSpec;
-  tiles: number[];
-  palette: number[];
-  map: number[];
-};
 
 function isProcessBackgroundResult(
   obj: unknown,

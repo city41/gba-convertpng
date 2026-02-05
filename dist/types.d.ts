@@ -1,3 +1,4 @@
+import { Canvas } from "canvas";
 export type Format = "C" | "C.inc" | "z80" | "pyz80" | "asz80" | "bin";
 export type Width = "b" | "w" | "dw";
 export type BasicSpriteSpec = {
@@ -19,10 +20,35 @@ export type BackgroundSpec = {
     file: string;
     trimPalette?: boolean;
 };
+export type BitmapSpec = {
+    file: string;
+};
 export type ImportedJsonSpec = {
     outputDir: string;
     format?: Format;
     sprites?: SpriteSpec[];
     backgrounds?: BackgroundSpec[];
+    bitmaps?: BitmapSpec[];
 };
 export type JsonSpec = Required<ImportedJsonSpec>;
+export type ProcessBasicSpriteResult = {
+    sprite: BasicSpriteSpec;
+    canvas: Canvas;
+    tiles: number[];
+    palette?: number[];
+};
+export type ProcessSharedPaletteSpritesResult = {
+    sprite: SharedPaletteSpriteSpec;
+    subsprites: ProcessBasicSpriteResult[];
+    palette: number[];
+};
+export type ProcessBackgroundResult = {
+    background: BackgroundSpec;
+    tiles: number[];
+    palette: number[];
+    map: number[];
+};
+export type ProcessBitmapResult = {
+    bitmap: BitmapSpec;
+    pixels: number[];
+};

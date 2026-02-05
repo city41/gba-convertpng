@@ -15,7 +15,7 @@ function extractTile(imageData, palette) {
             const hr = imageData.data[p + 4];
             const hg = imageData.data[p + 5];
             const hb = imageData.data[p + 6];
-            const hgbaColor = (0, colors_1.rgbToGBA16)(hr, hg, hb);
+            const hgbaColor = (0, colors_1.rgbToGBA15)(hr, hg, hb);
             hindex = palette.indexOf(hgbaColor);
         }
         // second pixel in tile, low nibble
@@ -27,7 +27,7 @@ function extractTile(imageData, palette) {
             const lr = imageData.data[p + 0];
             const lg = imageData.data[p + 1];
             const lb = imageData.data[p + 2];
-            const lgbaColor = (0, colors_1.rgbToGBA16)(lr, lg, lb);
+            const lgbaColor = (0, colors_1.rgbToGBA15)(lr, lg, lb);
             lindex = palette.indexOf(lgbaColor);
         }
         const tileByte = ((hindex & 0xf) << 4) | (lindex & 0xf);

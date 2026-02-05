@@ -8,6 +8,7 @@ import {
   Format,
   ImportedJsonSpec,
   JsonSpec,
+  ProcessBitmapResult,
   SharedPaletteSpriteSpec,
 } from "./types";
 import {
@@ -27,6 +28,7 @@ import {
 } from "./background";
 import { toCc, toCh, toCinc } from "./c";
 import { toAsm } from "./asm";
+import { isProcessBitmapResult, processBitmap } from "./bitmap";
 
 /**
  * Loads the json spec from the file path and converts all file paths
@@ -70,6 +72,12 @@ function hydrateJsonSpec(jsonSpecPath: string): JsonSpec {
         file: path.resolve(rootDir, bg.file),
       };
     }),
+    bitmaps: (initialSpec.bitmaps ?? []).map((bmp) => {
+      return {
+        ...bmp,
+        file: path.resolve(rootDir, bmp.file),
+      };
+    }),
   };
 }
 
@@ -82,13 +90,15 @@ type SrcFiles = {
   tile: SrcFile[];
   palette: SrcFile[];
   map: SrcFile[];
+  bitmap: SrcFile[];
 };
 
 function toSrcFiles(
   result:
     | ProcessBasicSpriteResult
     | ProcessBackgroundResult
-    | ProcessSharedPaletteSpritesResult,
+    | ProcessSharedPaletteSpritesResult
+    | ProcessBitmapResult,
   format: Format,
 ): SrcFiles {
   let file: string;
@@ -98,13 +108,60 @@ function toSrcFiles(
     file = result.background.file;
   } else if (isProcessSharedPaletteSpritesResult(result)) {
     file = result.sprite.name;
+  } else if (isProcessBitmapResult(result)) {
+    file = result.bitmap.file;
   } else {
     throw new Error(`toSrcFiles: unexpected object: ${JSON.stringify(result)}`);
   }
 
   const fileRoot = path.basename(file, path.extname(file));
 
-  if (isProcessSharedPaletteSpritesResult(result)) {
+  if (isProcessBitmapResult(result)) {
+    switch (format) {
+      case "C":
+        return {
+          tile: [],
+          palette: [],
+          map: [],
+          bitmap: [
+            {
+              src: toCc(
+                result.pixels,
+                "w",
+                8,
+                fileRoot + "_bmp",
+                fileRoot + ".bmp",
+              ),
+              extension: "c",
+            },
+            {
+              src: toCh(result.pixels, "w", fileRoot + "_bmp"),
+              extension: "h",
+            },
+          ],
+        };
+      case "C.inc":
+        return {
+          tile: [],
+          palette: [],
+          map: [],
+          bitmap: [{ src: toCinc(result.pixels, "w", 8), extension: "c.inc" }],
+        };
+      case "asz80":
+      case "z80":
+      case "pyz80":
+        return {
+          tile: [],
+          palette: [],
+          map: [],
+          bitmap: [
+            { src: toAsm(result.pixels, "w", 8, format), extension: "asm" },
+          ],
+        };
+      case "bin":
+        throw new Error('gba-convertpng does not support "bin"');
+    }
+  } else if (isProcessSharedPaletteSpritesResult(result)) {
     switch (format) {
       case "C":
         return {
@@ -126,6 +183,7 @@ function toSrcFiles(
             },
           ],
           map: [],
+          bitmap: [],
         };
       case "C.inc":
         return {
@@ -134,6 +192,7 @@ function toSrcFiles(
             { src: toCinc(result.palette, "w", 8), extension: "c.inc" },
           ],
           map: [],
+          bitmap: [],
         };
       case "asz80":
       case "z80":
@@ -144,6 +203,7 @@ function toSrcFiles(
             { src: toAsm(result.palette, "w", 8, format), extension: "asm" },
           ],
           map: [],
+          bitmap: [],
         };
       case "bin":
         throw new Error('gba-convertpng does not support "bin"');
@@ -205,6 +265,7 @@ function toSrcFiles(
                   },
                 ]
               : [],
+          bitmap: [],
         };
       case "C.inc":
         return {
@@ -216,6 +277,7 @@ function toSrcFiles(
             "background" in result
               ? [{ src: toCinc(result.map, "w", 8), extension: "c.inc" }]
               : [],
+          bitmap: [],
         };
       case "asz80":
       case "z80":
@@ -231,6 +293,7 @@ function toSrcFiles(
             "background" in result
               ? [{ src: toAsm(result.map, "w", 8, format), extension: "asm" }]
               : [],
+          bitmap: [],
         };
       case "bin":
         throw new Error('gba-convertpng does not support "bin"');
@@ -278,6 +341,15 @@ async function writeFiles(
     await fsp.writeFile(mapOutputPath, mapSrcFile.src);
     console.log("wrote", mapOutputPath);
   }
+
+  for (const bmpSrcFile of srcFiles.bitmap) {
+    const bitmapOutputPath = path.resolve(
+      outputDir,
+      `${fileRoot}.bmp.${bmpSrcFile.extension}`,
+    );
+    await fsp.writeFile(bitmapOutputPath, bmpSrcFile.src);
+    console.log("wrote", bitmapOutputPath);
+  }
 }
 
 async function main(jsonSpec: JsonSpec) {
@@ -305,6 +377,12 @@ async function main(jsonSpec: JsonSpec) {
     const processResult = await processBackground(bg);
     const srcFiles = toSrcFiles(processResult, jsonSpec.format);
     await writeFiles(srcFiles, bg, jsonSpec.outputDir);
+  }
+
+  for (const bmp of jsonSpec.bitmaps) {
+    const processResult = await processBitmap(bmp);
+    const srcFiles = toSrcFiles(processResult, jsonSpec.format);
+    await writeFiles(srcFiles, bmp, jsonSpec.outputDir);
   }
 }
 

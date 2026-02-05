@@ -1,2 +1,2 @@
-declare function rgbToGBA16(r: number, g: number, b: number): number;
-export { rgbToGBA16 };
+declare function rgbToGBA15(r: number, g: number, b: number): number;
+export { rgbToGBA15 };

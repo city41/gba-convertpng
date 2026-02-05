@@ -1,5 +1,5 @@
 import { Canvas, ImageData } from "canvas";
-import { rgbToGBA16 } from "./colors";
+import { rgbToGBA15 } from "./colors";
 
 function extractTile(imageData: ImageData, palette: number[]) {
   const tileData: number[] = [];
@@ -17,7 +17,7 @@ function extractTile(imageData: ImageData, palette: number[]) {
       const hr = imageData.data[p + 4];
       const hg = imageData.data[p + 5];
       const hb = imageData.data[p + 6];
-      const hgbaColor = rgbToGBA16(hr, hg, hb);
+      const hgbaColor = rgbToGBA15(hr, hg, hb);
       hindex = palette.indexOf(hgbaColor);
     }
 
@@ -32,7 +32,7 @@ function extractTile(imageData: ImageData, palette: number[]) {
       const lr = imageData.data[p + 0];
       const lg = imageData.data[p + 1];
       const lb = imageData.data[p + 2];
-      const lgbaColor = rgbToGBA16(lr, lg, lb);
+      const lgbaColor = rgbToGBA15(lr, lg, lb);
       lindex = palette.indexOf(lgbaColor);
     }
 
@@ -69,7 +69,7 @@ function extractTile(imageData: ImageData, palette: number[]) {
 function extractTiles(
   c: Canvas,
   palette: number[],
-  frameCount: number
+  frameCount: number,
 ): number[][] {
   const context = c.getContext("2d")!;
   const tilesData: number[][] = [];

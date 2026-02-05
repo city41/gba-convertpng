@@ -3,23 +3,16 @@ import {
   forceCanvasToPalette,
   reduceColors,
 } from "./canvas";
-import { BasicSpriteSpec, SharedPaletteSpriteSpec, SpriteSpec } from "./types";
+import {
+  BasicSpriteSpec,
+  ProcessBasicSpriteResult,
+  ProcessSharedPaletteSpritesResult,
+  SharedPaletteSpriteSpec,
+  SpriteSpec,
+} from "./types";
 import { extractPalette, reduceCanvases } from "./palette";
 import { extractTiles } from "./tile";
 import { Canvas } from "canvas";
-
-type ProcessBasicSpriteResult = {
-  sprite: BasicSpriteSpec;
-  canvas: Canvas;
-  tiles: number[];
-  palette?: number[];
-};
-
-type ProcessSharedPaletteSpritesResult = {
-  sprite: SharedPaletteSpriteSpec;
-  subsprites: ProcessBasicSpriteResult[];
-  palette: number[];
-};
 
 function isSharedPaletteSpriteSpec(
   obj: unknown,

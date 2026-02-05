@@ -5,7 +5,7 @@ exports.reduceCanvases = reduceCanvases;
 const canvas_1 = require("canvas");
 const colors_1 = require("./colors");
 const MAGENTA_24 = [255, 0, 255, 255];
-const MAGENTA = (0, colors_1.rgbToGBA16)(255, 0, 255);
+const MAGENTA = (0, colors_1.rgbToGBA15)(255, 0, 255);
 function is24BitMagenta(color) {
     return (color.length === MAGENTA_24.length &&
         color.every((channel, i) => channel === MAGENTA_24[i]));
@@ -21,7 +21,7 @@ function extractPalette(c, pad = true) {
         const r = imageData.data[p];
         const g = imageData.data[p + 1];
         const b = imageData.data[p + 2];
-        const gbaColor = (0, colors_1.rgbToGBA16)(r, g, b);
+        const gbaColor = (0, colors_1.rgbToGBA15)(r, g, b);
         gbaColors.add(gbaColor);
     }
     const rawPalette = Array.from(gbaColors);

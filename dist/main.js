@@ -40,6 +40,7 @@ const sprite_1 = require("./sprite");
 const background_1 = require("./background");
 const c_1 = require("./c");
 const asm_1 = require("./asm");
+const bitmap_1 = require("./bitmap");
 /**
  * Loads the json spec from the file path and converts all file paths
  * inside to absolute paths so the rest of the tool doesn't have to think about it
@@ -82,6 +83,12 @@ function hydrateJsonSpec(jsonSpecPath) {
                 file: path.resolve(rootDir, bg.file),
             };
         }),
+        bitmaps: (initialSpec.bitmaps ?? []).map((bmp) => {
+            return {
+                ...bmp,
+                file: path.resolve(rootDir, bmp.file),
+            };
+        }),
     };
 }
 function toSrcFiles(result, format) {
@@ -95,11 +102,54 @@ function toSrcFiles(result, format) {
     else if ((0, sprite_1.isProcessSharedPaletteSpritesResult)(result)) {
         file = result.sprite.name;
     }
+    else if ((0, bitmap_1.isProcessBitmapResult)(result)) {
+        file = result.bitmap.file;
+    }
     else {
         throw new Error(`toSrcFiles: unexpected object: ${JSON.stringify(result)}`);
     }
     const fileRoot = path.basename(file, path.extname(file));
-    if ((0, sprite_1.isProcessSharedPaletteSpritesResult)(result)) {
+    if ((0, bitmap_1.isProcessBitmapResult)(result)) {
+        switch (format) {
+            case "C":
+                return {
+                    tile: [],
+                    palette: [],
+                    map: [],
+                    bitmap: [
+                        {
+                            src: (0, c_1.toCc)(result.pixels, "w", 8, fileRoot + "_bmp", fileRoot + ".bmp"),
+                            extension: "c",
+                        },
+                        {
+                            src: (0, c_1.toCh)(result.pixels, "w", fileRoot + "_bmp"),
+                            extension: "h",
+                        },
+                    ],
+                };
+            case "C.inc":
+                return {
+                    tile: [],
+                    palette: [],
+                    map: [],
+                    bitmap: [{ src: (0, c_1.toCinc)(result.pixels, "w", 8), extension: "c.inc" }],
+                };
+            case "asz80":
+            case "z80":
+            case "pyz80":
+                return {
+                    tile: [],
+                    palette: [],
+                    map: [],
+                    bitmap: [
+                        { src: (0, asm_1.toAsm)(result.pixels, "w", 8, format), extension: "asm" },
+                    ],
+                };
+            case "bin":
+                throw new Error('gba-convertpng does not support "bin"');
+        }
+    }
+    else if ((0, sprite_1.isProcessSharedPaletteSpritesResult)(result)) {
         switch (format) {
             case "C":
                 return {
@@ -115,6 +165,7 @@ function toSrcFiles(result, format) {
                         },
                     ],
                     map: [],
+                    bitmap: [],
                 };
             case "C.inc":
                 return {
@@ -123,6 +174,7 @@ function toSrcFiles(result, format) {
                         { src: (0, c_1.toCinc)(result.palette, "w", 8), extension: "c.inc" },
                     ],
                     map: [],
+                    bitmap: [],
                 };
             case "asz80":
             case "z80":
@@ -133,6 +185,7 @@ function toSrcFiles(result, format) {
                         { src: (0, asm_1.toAsm)(result.palette, "w", 8, format), extension: "asm" },
                     ],
                     map: [],
+                    bitmap: [],
                 };
             case "bin":
                 throw new Error('gba-convertpng does not support "bin"');
@@ -176,6 +229,7 @@ function toSrcFiles(result, format) {
                             },
                         ]
                         : [],
+                    bitmap: [],
                 };
             case "C.inc":
                 return {
@@ -186,6 +240,7 @@ function toSrcFiles(result, format) {
                     map: "background" in result
                         ? [{ src: (0, c_1.toCinc)(result.map, "w", 8), extension: "c.inc" }]
                         : [],
+                    bitmap: [],
                 };
             case "asz80":
             case "z80":
@@ -200,6 +255,7 @@ function toSrcFiles(result, format) {
                     map: "background" in result
                         ? [{ src: (0, asm_1.toAsm)(result.map, "w", 8, format), extension: "asm" }]
                         : [],
+                    bitmap: [],
                 };
             case "bin":
                 throw new Error('gba-convertpng does not support "bin"');
@@ -231,6 +287,11 @@ async function writeFiles(srcFiles, spec, outputDir) {
         await fsp.writeFile(mapOutputPath, mapSrcFile.src);
         console.log("wrote", mapOutputPath);
     }
+    for (const bmpSrcFile of srcFiles.bitmap) {
+        const bitmapOutputPath = path.resolve(outputDir, `${fileRoot}.bmp.${bmpSrcFile.extension}`);
+        await fsp.writeFile(bitmapOutputPath, bmpSrcFile.src);
+        console.log("wrote", bitmapOutputPath);
+    }
 }
 async function main(jsonSpec) {
     if (jsonSpec.format === "bin") {
@@ -256,6 +317,11 @@ async function main(jsonSpec) {
         const processResult = await (0, background_1.processBackground)(bg);
         const srcFiles = toSrcFiles(processResult, jsonSpec.format);
         await writeFiles(srcFiles, bg, jsonSpec.outputDir);
+    }
+    for (const bmp of jsonSpec.bitmaps) {
+        const processResult = await (0, bitmap_1.processBitmap)(bmp);
+        const srcFiles = toSrcFiles(processResult, jsonSpec.format);
+        await writeFiles(srcFiles, bmp, jsonSpec.outputDir);
     }
 }
 if (require.main === module) {

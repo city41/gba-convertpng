@@ -42,22 +42,23 @@ ${rows.join("\r\n")}
 }
 function toCc(data, width, numbersPerRow, variableName, fileNameRoot) {
     const dataType = widthToDataType[width];
-    const dataSize = widthToSize[width];
     const entries = toCinc(data, width, numbersPerRow, true);
     const src = `#include "${fileNameRoot}.h"
 
-const ${dataType} ${variableName}[${variableName.toUpperCase()}_BYTE_LENGTH] = ${entries.length * dataSize}; `;
+const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entries}; `;
     return src;
 }
 function toCh(data, width, variableName) {
     const dataType = widthToDataType[width];
+    const dataSize = widthToSize[width];
     const count = data.length;
     const src = `#pragma once
 #include <tonc.h>
 
-#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * 4}
+#define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * dataSize}
+#define ${variableName.toUpperCase()}_COUNT ${count}
 
-extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_LENGTH];`;
+extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT];`;
     return src;
 }
 //# sourceMappingURL=c.js.map
