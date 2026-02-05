@@ -52,6 +52,9 @@ async function processBasicSprite(
   sprite: BasicSpriteSpec,
   forcedPaletteOverride?: Canvas,
 ): Promise<ProcessBasicSpriteResult> {
+  if (sprite.frames === undefined || sprite.frames === 0) {
+    throw new Error(`sprite, ${sprite.file}, has no frames defined`);
+  }
   let canvas = await reduceColors(await createCanvasFromPath(sprite.file), 16);
 
   let palette: number[];
