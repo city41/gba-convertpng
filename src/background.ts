@@ -52,6 +52,10 @@ async function processBackground(
 
   const map = extractMap(allTilesThatFormImage, dedupedTiles);
 
+  if (typeof bg.transparentColor === "number") {
+    palette[0] = bg.transparentColor;
+  }
+
   return {
     background: bg,
     tiles: dedupedTiles.flat(1),

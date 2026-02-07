@@ -24,6 +24,7 @@ export type SpriteSpec = BasicSpriteSpec | SharedPaletteSpriteSpec;
 export type BackgroundSpec = {
   file: string;
   trimPalette?: boolean;
+  transparentColor?: number;
 };
 
 export type BitmapSpec = {

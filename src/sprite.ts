@@ -70,6 +70,10 @@ async function processBasicSprite(
 
   const tiles = extractTiles(canvas, palette, sprite.frames).flat(1);
 
+  if (typeof sprite.transparentColor === "number") {
+    palette[0] = sprite.transparentColor;
+  }
+
   return {
     sprite,
     canvas,
