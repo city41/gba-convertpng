@@ -154,7 +154,7 @@ async function forceCanvasToPalette(
 
   for (let p = 0; p < canvasImageData.data.length; p += 4) {
     const pixel = canvasImageData.data.slice(p, p + 4);
-    if (isMagenta(pixel)) {
+    if (isMagenta(pixel) || pixel[3] !== 255) {
       continue;
     }
     const nearestPixel = findNearestColor(pixel, paletteImageData.data);

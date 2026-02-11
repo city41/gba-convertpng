@@ -19,6 +19,7 @@ export type SpriteSpec = BasicSpriteSpec | SharedPaletteSpriteSpec;
 export type BackgroundSpec = {
     file: string;
     trimPalette?: boolean;
+    transparentColor?: number;
 };
 export type BitmapSpec = {
     file: string;
@@ -50,5 +51,7 @@ export type ProcessBackgroundResult = {
 };
 export type ProcessBitmapResult = {
     bitmap: BitmapSpec;
+    width: number;
+    height: number;
     pixels: number[];
 };

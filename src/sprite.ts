@@ -112,7 +112,7 @@ async function processSharedPaletteSprites(
 
   const { palette: commonPalette, canvas: forcedPaletteCanvas } = forcedPalette
     ? {
-        palette: extractPalette(forcedPalette, false),
+        palette: getForcedPalette(forcedPalette),
         canvas: forcedPalette,
       }
     : reduceCanvases(canvases);

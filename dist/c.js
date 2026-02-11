@@ -48,7 +48,7 @@ function toCc(data, width, numbersPerRow, variableName, fileNameRoot) {
 const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entries}; `;
     return src;
 }
-function toCh(data, width, variableName) {
+function toCh(data, width, variableName, extraContent) {
     const dataType = widthToDataType[width];
     const dataSize = widthToSize[width];
     const count = data.length;
@@ -57,6 +57,8 @@ function toCh(data, width, variableName) {
 
 #define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * dataSize}
 #define ${variableName.toUpperCase()}_COUNT ${count}
+
+${extraContent ?? ""}
 
 extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT];`;
     return src;

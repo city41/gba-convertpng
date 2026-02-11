@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extractPalette = extractPalette;
+exports.getForcedPalette = getForcedPalette;
 exports.reduceCanvases = reduceCanvases;
 const canvas_1 = require("canvas");
 const colors_1 = require("./colors");
@@ -9,6 +10,21 @@ const MAGENTA = (0, colors_1.rgbToGBA15)(255, 0, 255);
 function is24BitMagenta(color) {
     return (color.length === MAGENTA_24.length &&
         color.every((channel, i) => channel === MAGENTA_24[i]));
+}
+function getForcedPalette(c) {
+    const imageData = c.getContext("2d").getImageData(0, 0, c.width, c.height);
+    const rawPalette = [];
+    for (let p = 0; p < imageData.data.length; p += 4) {
+        const r = imageData.data[p];
+        const g = imageData.data[p + 1];
+        const b = imageData.data[p + 2];
+        const gbaColor = (0, colors_1.rgbToGBA15)(r, g, b);
+        rawPalette.push(gbaColor);
+    }
+    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+    // then append magenta as the first color, to become transparent
+    const palette = [MAGENTA].concat(paletteWithoutMangenta);
+    return palette;
 }
 function extractPalette(c, pad = true) {
     const gbaColors = new Set();
@@ -67,7 +83,7 @@ function reduceCanvases(canvases) {
     });
     context.putImageData(imageData, 0, 0);
     return {
-        palette: extractPalette(paletteCanvas),
+        palette: getForcedPalette(paletteCanvas),
         canvas: paletteCanvas,
     };
 }

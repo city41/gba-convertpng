@@ -30,18 +30,24 @@ function isBasicSpriteSpec(sprite) {
     return "file" in sprite;
 }
 async function processBasicSprite(sprite, forcedPaletteOverride) {
+    if (sprite.frames === undefined || sprite.frames === 0) {
+        throw new Error(`sprite, ${sprite.file}, has no frames defined`);
+    }
     let canvas = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(sprite.file), 16);
     let palette;
     if (forcedPaletteOverride || sprite.forcePalette) {
         const forcedPaletteCanvas = forcedPaletteOverride ??
             (await (0, canvas_1.createCanvasFromPath)(sprite.forcePalette));
         canvas = await (0, canvas_1.forceCanvasToPalette)(canvas, forcedPaletteCanvas);
-        palette = (0, palette_1.extractPalette)(forcedPaletteCanvas, false);
+        palette = (0, palette_1.getForcedPalette)(forcedPaletteCanvas);
     }
     else {
         palette = (0, palette_1.extractPalette)(canvas, !sprite.trimPalette);
     }
     const tiles = (0, tile_1.extractTiles)(canvas, palette, sprite.frames).flat(1);
+    if (typeof sprite.transparentColor === "number") {
+        palette[0] = sprite.transparentColor;
+    }
     return {
         sprite,
         canvas,
@@ -50,6 +56,10 @@ async function processBasicSprite(sprite, forcedPaletteOverride) {
     };
 }
 async function processSharedPaletteSprites(sharedPaletteSprite) {
+    if (sharedPaletteSprite.name === undefined ||
+        sharedPaletteSprite.name.trim() === "") {
+        throw new Error("sharedPaletteSprite lacks a name");
+    }
     const subsprites = [];
     const canvases = [];
     const forcedPalette = sharedPaletteSprite.forcePalette
@@ -65,7 +75,7 @@ async function processSharedPaletteSprites(sharedPaletteSprite) {
     }
     const { palette: commonPalette, canvas: forcedPaletteCanvas } = forcedPalette
         ? {
-            palette: (0, palette_1.extractPalette)(forcedPalette, false),
+            palette: (0, palette_1.getForcedPalette)(forcedPalette),
             canvas: forcedPalette,
         }
         : (0, palette_1.reduceCanvases)(canvases);

@@ -23,6 +23,8 @@ async function processBitmap(bmp) {
     }
     return {
         bitmap: bmp,
+        width: canvas.width,
+        height: canvas.height,
         pixels,
     };
 }

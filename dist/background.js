@@ -36,6 +36,9 @@ async function processBackground(bg) {
     const allTilesThatFormImage = (0, tile_1.extractTiles)(canvas, palette, 1);
     const dedupedTiles = (0, tile_1.dedupeTiles)(allTilesThatFormImage);
     const map = extractMap(allTilesThatFormImage, dedupedTiles);
+    if (typeof bg.transparentColor === "number") {
+        palette[0] = bg.transparentColor;
+    }
     return {
         background: bg,
         tiles: dedupedTiles.flat(1),

@@ -115,7 +115,7 @@ function reduceCanvases(canvases: Canvas[]): {
   context.putImageData(imageData, 0, 0);
 
   return {
-    palette: extractPalette(paletteCanvas),
+    palette: getForcedPalette(paletteCanvas),
     canvas: paletteCanvas,
   };
 }
