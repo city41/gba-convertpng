@@ -67,7 +67,12 @@ const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entri
   return src;
 }
 
-function toCh(data: number[], width: Width, variableName: string): string {
+function toCh(
+  data: number[],
+  width: Width,
+  variableName: string,
+  extraContent?: string,
+): string {
   const dataType = widthToDataType[width];
   const dataSize = widthToSize[width];
   const count = data.length;
@@ -77,6 +82,8 @@ function toCh(data: number[], width: Width, variableName: string): string {
 
 #define ${variableName.toUpperCase()}_BYTE_LENGTH ${count * dataSize}
 #define ${variableName.toUpperCase()}_COUNT ${count}
+
+${extraContent ?? ""}
 
 extern const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT];`;
 

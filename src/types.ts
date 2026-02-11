@@ -64,5 +64,7 @@ export type ProcessBackgroundResult = {
 
 export type ProcessBitmapResult = {
   bitmap: BitmapSpec;
+  width: number;
+  height: number;
   pixels: number[];
 };

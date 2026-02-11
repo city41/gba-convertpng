@@ -93,6 +93,15 @@ type SrcFiles = {
   bitmap: SrcFile[];
 };
 
+function getBitmapDefines(result: ProcessBitmapResult): string {
+  const name = path.basename(
+    result.bitmap.file,
+    path.extname(result.bitmap.file),
+  );
+  return `#define ${name.toUpperCase()}_WIDTH ${result.width}
+#define ${name.toUpperCase()}_HEIGHT ${result.height}`;
+}
+
 function toSrcFiles(
   result:
     | ProcessBasicSpriteResult
@@ -135,7 +144,12 @@ function toSrcFiles(
               extension: "c",
             },
             {
-              src: toCh(result.pixels, "w", fileRoot + "_bmp"),
+              src: toCh(
+                result.pixels,
+                "w",
+                fileRoot + "_bmp",
+                getBitmapDefines(result),
+              ),
               extension: "h",
             },
           ],

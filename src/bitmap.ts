@@ -36,6 +36,8 @@ async function processBitmap(bmp: BitmapSpec): Promise<ProcessBitmapResult> {
 
   return {
     bitmap: bmp,
+    width: canvas.width,
+    height: canvas.height,
     pixels,
   };
 }
