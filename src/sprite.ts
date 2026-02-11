@@ -10,7 +10,7 @@ import {
   SharedPaletteSpriteSpec,
   SpriteSpec,
 } from "./types";
-import { extractPalette, reduceCanvases } from "./palette";
+import { extractPalette, getForcedPalette, reduceCanvases } from "./palette";
 import { extractTiles } from "./tile";
 import { Canvas } from "canvas";
 
@@ -63,7 +63,7 @@ async function processBasicSprite(
       forcedPaletteOverride ??
       (await createCanvasFromPath(sprite.forcePalette!));
     canvas = await forceCanvasToPalette(canvas, forcedPaletteCanvas);
-    palette = extractPalette(forcedPaletteCanvas, false);
+    palette = getForcedPalette(forcedPaletteCanvas);
   } else {
     palette = extractPalette(canvas, !sprite.trimPalette);
   }
