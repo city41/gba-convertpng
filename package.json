@@ -1,6 +1,6 @@
 {
   "name": "@city41/gba-convertpng",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Converts png images to GBA tile format",
   "main": "index.js",
   "repository": "github.com/city41/gba-convertpng",
