@@ -85,6 +85,12 @@ async function processBasicSprite(
 async function processSharedPaletteSprites(
   sharedPaletteSprite: SharedPaletteSpriteSpec,
 ): Promise<ProcessSharedPaletteSpritesResult> {
+  if (
+    sharedPaletteSprite.name === undefined ||
+    sharedPaletteSprite.name.trim() === ""
+  ) {
+    throw new Error("sharedPaletteSprite lacks a name");
+  }
   const subsprites: BasicSpriteSpec[] = [];
   const canvases: Canvas[] = [];
 
