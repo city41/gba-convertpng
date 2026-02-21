@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createCanvasFromPath = createCanvasFromPath;
 exports.reduceColors = reduceColors;
 exports.forceCanvasToPalette = forceCanvasToPalette;
+exports.roundUpToTileSize = roundUpToTileSize;
 const path = __importStar(require("node:path"));
 const os = __importStar(require("node:os"));
 const fsp = __importStar(require("node:fs/promises"));
@@ -138,5 +139,13 @@ async function forceCanvasToPalette(canvas, palette) {
     }
     canvas.getContext("2d").putImageData(canvasImageData, 0, 0);
     return canvas;
+}
+// given an input canvas, returns it with additional pixels to
+// the left and bottom such that the canvas size is a multiple of 8
+function roundUpToTileSize(canvas) {
+    const roundedCanvas = (0, canvas_1.createCanvas)(Math.ceil(canvas.width / 8) * 8, Math.ceil(canvas.height / 8) * 8);
+    const context = roundedCanvas.getContext("2d");
+    context.drawImage(canvas, 0, 0);
+    return roundedCanvas;
 }
 //# sourceMappingURL=canvas.js.map

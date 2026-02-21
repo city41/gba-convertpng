@@ -48,9 +48,9 @@ function toCc(data, width, numbersPerRow, variableName, fileNameRoot) {
 const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entries}; `;
     return src;
 }
-function toCh(data, width, variableName, extraContent) {
-    const dataType = widthToDataType[width];
-    const dataSize = widthToSize[width];
+function toCh(data, dataWidth, variableName, extraContent) {
+    const dataType = widthToDataType[dataWidth];
+    const dataSize = widthToSize[dataWidth];
     const count = data.length;
     const src = `#pragma once
 #include <tonc.h>

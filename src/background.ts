@@ -1,4 +1,8 @@
-import { createCanvasFromPath, reduceColors } from "./canvas";
+import {
+  createCanvasFromPath,
+  reduceColors,
+  roundUpToTileSize,
+} from "./canvas";
 import { extractPalette } from "./palette";
 import { BackgroundSpec, ProcessBackgroundResult } from "./types";
 import { dedupeTiles, extractTiles } from "./tile";
@@ -43,9 +47,17 @@ function extractMap(
 async function processBackground(
   bg: BackgroundSpec,
 ): Promise<ProcessBackgroundResult> {
-  const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
+  // const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
+  let canvas = await createCanvasFromPath(bg.file);
+
+  if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
+    canvas = await reduceColors(canvas, 16);
+  }
+
+  canvas = roundUpToTileSize(canvas);
 
   const palette = extractPalette(canvas, !bg.trimPalette);
+  console.log("palette size", palette.length);
 
   const allTilesThatFormImage = extractTiles(canvas, palette, 1);
   const dedupedTiles = dedupeTiles(allTilesThatFormImage);
@@ -57,6 +69,7 @@ async function processBackground(
   }
 
   return {
+    canvas,
     background: bg,
     tiles: dedupedTiles.flat(1),
     palette,

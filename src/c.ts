@@ -1,18 +1,18 @@
 import { toHexByte, toHexDoubleWord, toHexWord } from "./toHex";
-import { Width } from "./types";
+import { DataWidth } from "./types";
 
-const widthToDataType: Record<Width, string> = {
+const widthToDataType: Record<DataWidth, string> = {
   b: "u8",
   w: "u16",
   dw: "u32",
 };
-const widthToSize: Record<Width, number> = {
+const widthToSize: Record<DataWidth, number> = {
   b: 1,
   w: 2,
   dw: 4,
 };
 
-const widthToHexFunction: Record<Width, (a: number) => string> = {
+const widthToHexFunction: Record<DataWidth, (a: number) => string> = {
   b: toHexByte,
   w: toHexWord,
   dw: toHexDoubleWord,
@@ -20,7 +20,7 @@ const widthToHexFunction: Record<Width, (a: number) => string> = {
 
 function toCinc(
   data: number[],
-  width: Width,
+  width: DataWidth,
   numbersPerRow: number,
   bracketsOnOwnLine = false,
 ): string {
@@ -69,12 +69,12 @@ const ${dataType} ${variableName}[${variableName.toUpperCase()}_COUNT] = ${entri
 
 function toCh(
   data: number[],
-  width: Width,
+  dataWidth: DataWidth,
   variableName: string,
   extraContent?: string,
 ): string {
-  const dataType = widthToDataType[width];
-  const dataSize = widthToSize[width];
+  const dataType = widthToDataType[dataWidth];
+  const dataSize = widthToSize[dataWidth];
   const count = data.length;
 
   const src = `#pragma once

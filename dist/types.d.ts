@@ -1,6 +1,6 @@
 import { Canvas } from "canvas";
 export type Format = "C" | "C.inc" | "z80" | "pyz80" | "asz80" | "bin";
-export type Width = "b" | "w" | "dw";
+export type DataWidth = "b" | "w" | "dw";
 export type BasicSpriteSpec = {
     file: string;
     frames: number;
@@ -20,6 +20,7 @@ export type BackgroundSpec = {
     file: string;
     trimPalette?: boolean;
     transparentColor?: number;
+    reduceColors?: boolean;
 };
 export type BitmapSpec = {
     file: string;
@@ -44,6 +45,7 @@ export type ProcessSharedPaletteSpritesResult = {
     palette: number[];
 };
 export type ProcessBackgroundResult = {
+    canvas: Canvas;
     background: BackgroundSpec;
     tiles: number[];
     palette: number[];

@@ -34,6 +34,7 @@ async function processBasicSprite(sprite, forcedPaletteOverride) {
         throw new Error(`sprite, ${sprite.file}, has no frames defined`);
     }
     let canvas = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(sprite.file), 16);
+    canvas = (0, canvas_1.roundUpToTileSize)(canvas);
     let palette;
     if (forcedPaletteOverride || sprite.forcePalette) {
         const forcedPaletteCanvas = forcedPaletteOverride ??

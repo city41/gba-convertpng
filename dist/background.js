@@ -31,8 +31,14 @@ function extractMap(allTilesThatFormImage, dedupedTiles) {
     return map;
 }
 async function processBackground(bg) {
-    const canvas = await (0, canvas_1.reduceColors)(await (0, canvas_1.createCanvasFromPath)(bg.file), 16);
+    // const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
+    let canvas = await (0, canvas_1.createCanvasFromPath)(bg.file);
+    if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
+        canvas = await (0, canvas_1.reduceColors)(canvas, 16);
+    }
+    canvas = (0, canvas_1.roundUpToTileSize)(canvas);
     const palette = (0, palette_1.extractPalette)(canvas, !bg.trimPalette);
+    console.log("palette size", palette.length);
     const allTilesThatFormImage = (0, tile_1.extractTiles)(canvas, palette, 1);
     const dedupedTiles = (0, tile_1.dedupeTiles)(allTilesThatFormImage);
     const map = extractMap(allTilesThatFormImage, dedupedTiles);
@@ -40,6 +46,7 @@ async function processBackground(bg) {
         palette[0] = bg.transparentColor;
     }
     return {
+        canvas,
         background: bg,
         tiles: dedupedTiles.flat(1),
         palette,

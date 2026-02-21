@@ -2,6 +2,7 @@ import {
   createCanvasFromPath,
   forceCanvasToPalette,
   reduceColors,
+  roundUpToTileSize,
 } from "./canvas";
 import {
   BasicSpriteSpec,
@@ -56,6 +57,7 @@ async function processBasicSprite(
     throw new Error(`sprite, ${sprite.file}, has no frames defined`);
   }
   let canvas = await reduceColors(await createCanvasFromPath(sprite.file), 16);
+  canvas = roundUpToTileSize(canvas);
 
   let palette: number[];
   if (forcedPaletteOverride || sprite.forcePalette) {

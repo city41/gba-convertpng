@@ -166,4 +166,23 @@ async function forceCanvasToPalette(
   return canvas;
 }
 
-export { createCanvasFromPath, reduceColors, forceCanvasToPalette };
+// given an input canvas, returns it with additional pixels to
+// the left and bottom such that the canvas size is a multiple of 8
+function roundUpToTileSize(canvas: Canvas): Canvas {
+  const roundedCanvas = createCanvas(
+    Math.ceil(canvas.width / 8) * 8,
+    Math.ceil(canvas.height / 8) * 8,
+  );
+  const context = roundedCanvas.getContext("2d")!;
+
+  context.drawImage(canvas, 0, 0);
+
+  return roundedCanvas;
+}
+
+export {
+  createCanvasFromPath,
+  reduceColors,
+  forceCanvasToPalette,
+  roundUpToTileSize,
+};

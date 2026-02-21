@@ -81,6 +81,7 @@ function reduceCanvases(canvases: Canvas[]): {
   const paletteSize = paletteColors.length;
 
   if (paletteSize > 16) {
+    console.error(JSON.stringify(paletteColors));
     throw new Error(
       `reduceCanvasees: final palette is too large: ${paletteSize}`,
     );

@@ -62,6 +62,7 @@ function reduceCanvases(canvases) {
     const paletteColors = Object.values(fullRgbColorMap);
     const paletteSize = paletteColors.length;
     if (paletteSize > 16) {
+        console.error(JSON.stringify(paletteColors));
         throw new Error(`reduceCanvasees: final palette is too large: ${paletteSize}`);
     }
     // strip out transparency/magenta

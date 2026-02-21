@@ -102,6 +102,18 @@ function getBitmapDefines(result: ProcessBitmapResult): string {
 #define ${name.toUpperCase()}_HEIGHT ${result.height}`;
 }
 
+function getTileWidthHeightDefines(
+  result: ProcessBasicSpriteResult | ProcessBackgroundResult,
+  file: string,
+): string {
+  const name = path.basename(file, ".png");
+  let tileWidth = result.canvas.width / 8;
+  let tileHeight = result.canvas.height / 8;
+
+  return `#define ${name.toUpperCase()}_TILE_WIDTH ${tileWidth}
+#define ${name.toUpperCase()}_TILE_HEIGHT ${tileHeight}`;
+}
+
 function toSrcFiles(
   result:
     | ProcessBasicSpriteResult
@@ -238,7 +250,12 @@ function toSrcFiles(
               extension: "c",
             },
             {
-              src: toCh(result.tiles, "b", fileRoot + "_tiles"),
+              src: toCh(
+                result.tiles,
+                "b",
+                fileRoot + "_tiles",
+                getTileWidthHeightDefines(result, file),
+              ),
               extension: "h",
             },
           ],
