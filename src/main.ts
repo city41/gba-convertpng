@@ -111,12 +111,14 @@ function getTileDefines(
   let tileHeight = result.canvas.height / 8;
 
   let frameCountSrc = "";
+  let frameCount = 1;
 
   if (isProcessBasicSpriteResult(result)) {
+    frameCount = result.sprite.frames;
     frameCountSrc = `\n#define ${name.toUpperCase()}_FRAME_COUNT ${result.sprite.frames}`;
   }
 
-  return `#define ${name.toUpperCase()}_TILE_WIDTH ${tileWidth}
+  return `#define ${name.toUpperCase()}_TILE_WIDTH ${tileWidth / frameCount}
 #define ${name.toUpperCase()}_TILE_HEIGHT ${tileHeight}${frameCountSrc}`;
 }
 
