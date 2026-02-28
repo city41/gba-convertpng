@@ -61,6 +61,7 @@ export type ProcessBackgroundResult = {
   background: BackgroundSpec;
   tiles: number[];
   palette: number[];
+  paletteCount: number;
   map: number[];
 };
 

@@ -8,6 +8,7 @@ import {
   Format,
   ImportedJsonSpec,
   JsonSpec,
+  ProcessBackgroundResult,
   ProcessBitmapResult,
   SharedPaletteSpriteSpec,
 } from "./types";
@@ -23,8 +24,7 @@ import {
 } from "./sprite";
 import {
   isProcessBackgroundResult,
-  processBackground,
-  ProcessBackgroundResult,
+  processBackground
 } from "./background";
 import { toCc, toCh, toCinc } from "./c";
 import { toAsm } from "./asm";
@@ -100,6 +100,15 @@ function getBitmapDefines(result: ProcessBitmapResult): string {
   );
   return `#define ${name.toUpperCase()}_WIDTH ${result.width}
 #define ${name.toUpperCase()}_HEIGHT ${result.height}`;
+}
+
+function getPaletteDefines(result: ProcessBackgroundResult | ProcessBasicSpriteResult, file: string): string {
+  if (isProcessBasicSpriteResult(result)) {
+    return '';
+  }
+
+  const name = path.basename(file, ".png");
+  return `#define ${name.toUpperCase()}_NUM_PALETTES ${result.paletteCount}`;
 }
 
 function getTileDefines(
@@ -269,40 +278,40 @@ function toSrcFiles(
           ],
           palette: result.palette
             ? [
-                {
-                  src: toCc(
-                    result.palette,
-                    "w",
-                    8,
-                    fileRoot + "_palette",
-                    fileRoot + ".palette",
-                  ),
-                  extension: "c",
-                },
-                {
-                  src: toCh(result.palette, "w", fileRoot + "_palette"),
-                  extension: "h",
-                },
-              ]
+              {
+                src: toCc(
+                  result.palette,
+                  "w",
+                  8,
+                  fileRoot + "_palette",
+                  fileRoot + ".palette",
+                ),
+                extension: "c",
+              },
+              {
+                src: toCh(result.palette, "w", fileRoot + "_palette", getPaletteDefines(result, file)),
+                extension: "h",
+              },
+            ]
             : [],
           map:
             "background" in result
               ? [
-                  {
-                    src: toCc(
-                      result.map,
-                      "w",
-                      8,
-                      fileRoot + "_map",
-                      fileRoot + ".map",
-                    ),
-                    extension: "c",
-                  },
-                  {
-                    src: toCh(result.map, "w", fileRoot + "_map"),
-                    extension: "h",
-                  },
-                ]
+                {
+                  src: toCc(
+                    result.map,
+                    "w",
+                    8,
+                    fileRoot + "_map",
+                    fileRoot + ".map",
+                  ),
+                  extension: "c",
+                },
+                {
+                  src: toCh(result.map, "w", fileRoot + "_map"),
+                  extension: "h",
+                },
+              ]
               : [],
           bitmap: [],
         };

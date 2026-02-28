@@ -96,6 +96,13 @@ function getBitmapDefines(result) {
     return `#define ${name.toUpperCase()}_WIDTH ${result.width}
 #define ${name.toUpperCase()}_HEIGHT ${result.height}`;
 }
+function getPaletteDefines(result, file) {
+    if ((0, sprite_1.isProcessBasicSpriteResult)(result)) {
+        return '';
+    }
+    const name = path.basename(file, ".png");
+    return `#define ${name.toUpperCase()}_NUM_PALETTES ${result.paletteCount}`;
+}
 function getTileDefines(result, file) {
     const name = path.basename(file, ".png");
     let tileWidth = result.canvas.width / 8;
@@ -230,7 +237,7 @@ function toSrcFiles(result, format) {
                                 extension: "c",
                             },
                             {
-                                src: (0, c_1.toCh)(result.palette, "w", fileRoot + "_palette"),
+                                src: (0, c_1.toCh)(result.palette, "w", fileRoot + "_palette", getPaletteDefines(result, file)),
                                 extension: "h",
                             },
                         ]

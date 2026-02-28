@@ -1,81 +1,187 @@
-import {
-  createCanvasFromPath,
-  reduceColors,
-  roundUpToTileSize,
-} from "./canvas";
-import { extractPalette } from "./palette";
+import { createCanvasFromPath, reduceColors, roundUpToTileSize } from "./canvas";
 import { BackgroundSpec, ProcessBackgroundResult } from "./types";
-import { dedupeTiles, extractTiles } from "./tile";
-import isEqual from "lodash/isEqual";
+import { rgbToGBA15 } from './colors';
+import { sortBy } from "lodash";
+import { extractPalette15, MAGENTA_15 } from "./palette";
+
+type MapEntry = {
+    tileIndex: number;
+    paletteIndex: number;
+};
 
 function isProcessBackgroundResult(
-  obj: unknown,
+    obj: unknown,
 ): obj is ProcessBackgroundResult {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    "background" in obj &&
-    typeof obj.background === "object" &&
-    obj.background !== null &&
-    "file" in obj.background
-  );
+    return (
+        obj !== null &&
+        typeof obj === "object" &&
+        "background" in obj &&
+        typeof obj.background === "object" &&
+        obj.background !== null &&
+        "file" in obj.background
+    );
 }
 
-function extractMap(
-  allTilesThatFormImage: number[][],
-  dedupedTiles: number[][],
-): number[] {
-  const map: number[] = [];
+function convertTileTo15Bit(rawTile: number[]): number[] {
+    const data15: number[] = [];
 
-  allTilesThatFormImage.forEach((tile, i) => {
-    const index = dedupedTiles.findIndex((dt) => {
-      return isEqual(dt, tile);
-    });
-
-    if (index < 0) {
-      throw new Error(
-        "extractMap: failed to find a matching tile in the deduped tile set",
-      );
+    for (let p = 0; p < rawTile.length; p += 4) {
+        if (rawTile[p + 3] !== 255) {
+            data15.push(MAGENTA_15);
+        } else {
+            data15.push(rgbToGBA15(rawTile[p], rawTile[p + 1], rawTile[p + 2]));
+        }
     }
 
-    map.push(index);
-  });
-
-  return map;
+    return data15;
 }
 
-async function processBackground(
-  bg: BackgroundSpec,
-): Promise<ProcessBackgroundResult> {
-  // const canvas = await reduceColors(await createCanvasFromPath(bg.file), 16);
-  let canvas = await createCanvasFromPath(bg.file);
+function getTileIndex(tilePalette: number[][], tile: number[]): number {
+    const index = tilePalette.findIndex(t => {
+        return t.join('-') === tile.join('-');
+    });
 
-  if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
-    canvas = await reduceColors(canvas, 16);
-  }
-
-  canvas = roundUpToTileSize(canvas);
-
-  const palette = extractPalette(canvas, !bg.trimPalette);
-  console.log("palette size", palette.length);
-
-  const allTilesThatFormImage = extractTiles(canvas, palette, 1);
-  const dedupedTiles = dedupeTiles(allTilesThatFormImage);
-
-  const map = extractMap(allTilesThatFormImage, dedupedTiles);
-
-  if (typeof bg.transparentColor === "number") {
-    palette[0] = bg.transparentColor;
-  }
-
-  return {
-    canvas,
-    background: bg,
-    tiles: dedupedTiles.flat(1),
-    palette,
-    map,
-  };
+    if (index > -1) {
+        return index;
+    }
+    tilePalette.push([...tile]);
+    return tilePalette.length - 1;
 }
 
-export { processBackground, isProcessBackgroundResult };
-export type { ProcessBackgroundResult };
+// looks through all the palettes and combines multiple palettes into one 
+// based on how much room they have.
+// example, palette-a has 4 colors, palette-b has 6, result is a palette with 10 colors
+// possibly the two palettes share colors, only one copy of each color will be preserved
+//
+// by the way this algoritm works, it also uniqs the palettes
+function combinePalettes(palettes: number[][]): number[][] {
+    if (palettes.length <= 1) {
+        return palettes;
+    }
+
+    const sortedPalettes = sortBy(palettes, p => p.length);
+
+    let firstPalette = sortedPalettes[0];
+    const remainingPalettes: number[][] = [];
+
+    for (let p = 1; p < sortedPalettes.length; ++p) {
+        const otherPalette = sortedPalettes[p];
+        const otherPaletteUniqueColors = otherPalette.filter(c => !firstPalette.includes(c));
+        if (firstPalette.length + otherPaletteUniqueColors.length < 16) {
+            firstPalette = firstPalette.concat(otherPaletteUniqueColors);
+        } else {
+            remainingPalettes.push(otherPalette);
+        }
+    }
+
+    const combinedOtherPalettes = combinePalettes(remainingPalettes);
+
+    return [firstPalette].concat(combinedOtherPalettes);
+}
+
+function buildMap(tiles: MapEntry[], bgWidthPx: number, bgHeightPx: number): number[] {
+    const map: number[] = [];
+    const bgWidthT = bgWidthPx / 8;
+    const bgHeightT = bgHeightPx / 8;
+
+    for (let y = 0; y < bgHeightT; ++y) {
+        for (let x = 0; x < bgWidthT; ++x) {
+            const tile = tiles[y * bgWidthT + x];
+            map.push(tile.paletteIndex << 12 | tile.tileIndex);
+        }
+    }
+    return map;
+}
+
+function getGBATile(data15: number[], palette: number[]): number[] {
+    const gbaTile: number[] = [];
+
+    for (let p = 0; p < data15.length; p += 2) {
+        const highNibble = palette.indexOf(data15[p + 1]);
+        const lowNibble = palette.indexOf(data15[p]);
+        const byte = (highNibble & 0xf) << 4 | (lowNibble & 0xf);
+
+        gbaTile.push(byte);
+    }
+    return gbaTile;
+}
+
+function findMatchingPalette(data15: number[], palettes: number[][]): number[] {
+    const foundPalette = palettes.find(palette => {
+        return data15.every(c => palette.includes(c));
+    });
+
+    if (!foundPalette) {
+        throw new Error('findMatchingPalette: failed to find a palette');
+    }
+
+    return foundPalette;
+}
+
+function padPalette(palette: number[]): number[] {
+    while (palette.length < 16) {
+        palette.push(0);
+    }
+    return palette;
+}
+
+async function processBackground(bg: BackgroundSpec): Promise<ProcessBackgroundResult> {
+    let canvas = await createCanvasFromPath(bg.file);
+
+    if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
+        canvas = await reduceColors(canvas, 16);
+    }
+
+    canvas = roundUpToTileSize(canvas);
+
+
+    const ctx = canvas.getContext('2d')!;
+
+    const tiles: MapEntry[] = [];
+    const tilePalette: number[][] = [];
+    let palettes: number[][] = [];
+
+    // first, determine the palettes
+    for (let y = 0; y < canvas.height; y += 8) {
+        for (let x = 0; x < canvas.width; x += 8) {
+            const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
+            const data15 = convertTileTo15Bit(rawTile);
+            const palette = extractPalette15(data15, false);
+            palettes = combinePalettes(palettes.concat([palette]));
+        }
+    }
+
+    // now with palettes in hand, do the rest
+    for (let y = 0; y < canvas.height; y += 8) {
+        for (let x = 0; x < canvas.width; x += 8) {
+            const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
+            const data15 = convertTileTo15Bit(rawTile);
+            const palette = findMatchingPalette(data15, palettes);
+            const gbaTileData = getGBATile(data15, palette);
+            const tileIndex = getTileIndex(tilePalette, gbaTileData);
+            const paletteIndex = palettes.indexOf(palette);
+            tiles.push({
+                tileIndex,
+                paletteIndex,
+            });
+        }
+    }
+
+    const tileData = tilePalette.flat(1);
+    const paletteData = palettes.map(padPalette).flat(1);
+    const paletteCount = palettes.length;
+    const map = buildMap(tiles, canvas.width, canvas.height);
+
+    return {
+        background: bg,
+        canvas,
+        map,
+        palette: paletteData,
+        paletteCount,
+        tiles: tileData
+    };
+}
+
+
+export { processBackground, isProcessBackgroundResult }
+

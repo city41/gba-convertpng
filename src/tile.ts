@@ -5,7 +5,7 @@ function extractTile(imageData: ImageData, palette: number[]) {
   const tileData: number[] = [];
 
   for (let p = 0; p < imageData.data.length; p += 8) {
-    // first pixel in tile, high nibble
+    // second pixel in tile, high nibble
 
     // if this pixel has any transparency, then use palette index 0
     // which will make it fully transparent on the gba
@@ -21,7 +21,7 @@ function extractTile(imageData: ImageData, palette: number[]) {
       hindex = palette.indexOf(hgbaColor);
     }
 
-    // second pixel in tile, low nibble
+    // first pixel in tile, low nibble
 
     // if this pixel has any transparency, then use palette index 0
     // which will make it fully transparent on the gba

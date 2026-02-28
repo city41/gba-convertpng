@@ -3,7 +3,7 @@ import { rgbToGBA15 } from "./colors";
 
 const MAGENTA_24: number[] = [255, 0, 255, 255] as const;
 
-const MAGENTA = rgbToGBA15(255, 0, 255);
+const MAGENTA_15 = rgbToGBA15(255, 0, 255);
 
 function is24BitMagenta(color: number[]): boolean {
   return (
@@ -25,9 +25,9 @@ function getForcedPalette(c: Canvas): number[] {
     rawPalette.push(gbaColor);
   }
 
-  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
   // then append magenta as the first color, to become transparent
-  const palette = [MAGENTA].concat(paletteWithoutMangenta);
+  const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
 
   return palette;
 }
@@ -52,10 +52,26 @@ function extractPalette(c: Canvas, pad = true): number[] {
 
   const rawPalette = Array.from(gbaColors);
   // make sure there is no magenta in the palette
-  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
 
   // then append magenta as the first color, to become transparent
-  const palette = [MAGENTA].concat(paletteWithoutMangenta);
+  const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
+  while (pad && palette.length < 16) {
+    palette.push(0);
+  }
+
+  return palette;
+}
+
+function extractPalette15(data15: number[], pad = true): number[] {
+  const gbaColors = new Set<number>(data15);
+  const rawPalette = Array.from(gbaColors);
+
+  // make sure there is no magenta in the palette
+  const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
+
+  // then append magenta as the first color, to become transparent
+  const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
   while (pad && palette.length < 16) {
     palette.push(0);
   }
@@ -121,4 +137,4 @@ function reduceCanvases(canvases: Canvas[]): {
   };
 }
 
-export { extractPalette, getForcedPalette, reduceCanvases };
+export { extractPalette, extractPalette15, getForcedPalette, reduceCanvases, MAGENTA_15 };

@@ -1,12 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MAGENTA_15 = void 0;
 exports.extractPalette = extractPalette;
+exports.extractPalette15 = extractPalette15;
 exports.getForcedPalette = getForcedPalette;
 exports.reduceCanvases = reduceCanvases;
 const canvas_1 = require("canvas");
 const colors_1 = require("./colors");
 const MAGENTA_24 = [255, 0, 255, 255];
-const MAGENTA = (0, colors_1.rgbToGBA15)(255, 0, 255);
+const MAGENTA_15 = (0, colors_1.rgbToGBA15)(255, 0, 255);
+exports.MAGENTA_15 = MAGENTA_15;
 function is24BitMagenta(color) {
     return (color.length === MAGENTA_24.length &&
         color.every((channel, i) => channel === MAGENTA_24[i]));
@@ -21,9 +24,9 @@ function getForcedPalette(c) {
         const gbaColor = (0, colors_1.rgbToGBA15)(r, g, b);
         rawPalette.push(gbaColor);
     }
-    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
     // then append magenta as the first color, to become transparent
-    const palette = [MAGENTA].concat(paletteWithoutMangenta);
+    const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
     return palette;
 }
 function extractPalette(c, pad = true) {
@@ -42,9 +45,21 @@ function extractPalette(c, pad = true) {
     }
     const rawPalette = Array.from(gbaColors);
     // make sure there is no magenta in the palette
-    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA);
+    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
     // then append magenta as the first color, to become transparent
-    const palette = [MAGENTA].concat(paletteWithoutMangenta);
+    const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
+    while (pad && palette.length < 16) {
+        palette.push(0);
+    }
+    return palette;
+}
+function extractPalette15(data15, pad = true) {
+    const gbaColors = new Set(data15);
+    const rawPalette = Array.from(gbaColors);
+    // make sure there is no magenta in the palette
+    const paletteWithoutMangenta = rawPalette.filter((c) => c !== MAGENTA_15);
+    // then append magenta as the first color, to become transparent
+    const palette = [MAGENTA_15].concat(paletteWithoutMangenta);
     while (pad && palette.length < 16) {
         palette.push(0);
     }
