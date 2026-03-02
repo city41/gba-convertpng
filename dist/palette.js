@@ -1,15 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAGENTA_15 = void 0;
+exports.processPalette = processPalette;
+exports.isProcessPaletteResult = isProcessPaletteResult;
 exports.extractPalette = extractPalette;
 exports.extractPalette15 = extractPalette15;
 exports.getForcedPalette = getForcedPalette;
 exports.reduceCanvases = reduceCanvases;
 const canvas_1 = require("canvas");
 const colors_1 = require("./colors");
+const canvas_2 = require("./canvas");
 const MAGENTA_24 = [255, 0, 255, 255];
 const MAGENTA_15 = (0, colors_1.rgbToGBA15)(255, 0, 255);
 exports.MAGENTA_15 = MAGENTA_15;
+function isProcessPaletteResult(obj) {
+    return (obj !== null &&
+        typeof obj === "object" &&
+        "palette" in obj &&
+        typeof obj.palette === "object" &&
+        obj.palette !== null &&
+        "file" in obj.palette);
+}
 function is24BitMagenta(color) {
     return (color.length === MAGENTA_24.length &&
         color.every((channel, i) => channel === MAGENTA_24[i]));
@@ -101,6 +112,20 @@ function reduceCanvases(canvases) {
     return {
         palette: getForcedPalette(paletteCanvas),
         canvas: paletteCanvas,
+    };
+}
+async function processPalette(palette) {
+    const paletteCanvas = await (0, canvas_2.createCanvasFromPath)(palette.file);
+    let paletteData;
+    if (palette.forcePalette) {
+        paletteData = getForcedPalette(paletteCanvas);
+    }
+    else {
+        paletteData = extractPalette(paletteCanvas, !palette.trimPalette);
+    }
+    return {
+        palette,
+        data: paletteData
     };
 }
 //# sourceMappingURL=palette.js.map

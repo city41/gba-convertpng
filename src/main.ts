@@ -5,11 +5,14 @@ import * as fsp from "fs/promises";
 import {
   BackgroundSpec,
   BasicSpriteSpec,
+  BitmapSpec,
   Format,
   ImportedJsonSpec,
   JsonSpec,
+  PaletteSpec,
   ProcessBackgroundResult,
   ProcessBitmapResult,
+  ProcessPaletteResult,
   SharedPaletteSpriteSpec,
 } from "./types";
 import {
@@ -29,6 +32,7 @@ import {
 import { toCc, toCh, toCinc } from "./c";
 import { toAsm } from "./asm";
 import { isProcessBitmapResult, processBitmap } from "./bitmap";
+import { isProcessPaletteResult, processPalette } from "./palette";
 
 /**
  * Loads the json spec from the file path and converts all file paths
@@ -81,6 +85,12 @@ function hydrateJsonSpec(jsonSpecPath: string): JsonSpec {
         file: path.resolve(rootDir, bmp.file),
       };
     }),
+    palettes: (initialSpec.palettes ?? []).map(p => {
+      return {
+        ...p,
+        file: path.resolve(rootDir, p.file)
+      };
+    })
   };
 }
 
@@ -139,7 +149,8 @@ function toSrcFiles(
     | ProcessBasicSpriteResult
     | ProcessBackgroundResult
     | ProcessSharedPaletteSpritesResult
-    | ProcessBitmapResult,
+    | ProcessBitmapResult
+    | ProcessPaletteResult,
   format: Format,
 ): SrcFiles {
   let file: string;
@@ -151,6 +162,8 @@ function toSrcFiles(
     file = result.sprite.name;
   } else if (isProcessBitmapResult(result)) {
     file = result.bitmap.file;
+  } else if (isProcessPaletteResult(result)) {
+    file = result.palette.file;
   } else {
     throw new Error(`toSrcFiles: unexpected object: ${JSON.stringify(result)}`);
   }
@@ -247,6 +260,53 @@ function toSrcFiles(
           tile: [],
           palette: [
             { src: toAsm(result.palette, "w", 8, format), extension: "asm" },
+          ],
+          map: [],
+          bitmap: [],
+        };
+      case "bin":
+        throw new Error('gba-convertpng does not support "bin"');
+    }
+  } else if (isProcessPaletteResult(result)) {
+    switch (format) {
+      case "C":
+        return {
+          tile: [],
+          palette: [
+            {
+              src: toCc(
+                result.data,
+                "w",
+                8,
+                fileRoot + "_palette",
+                fileRoot + ".palette",
+              ),
+              extension: "c",
+            },
+            {
+              src: toCh(result.data, "w", fileRoot + "_palette"),
+              extension: "h",
+            },
+          ],
+          map: [],
+          bitmap: [],
+        };
+      case "C.inc":
+        return {
+          tile: [],
+          palette: [
+            { src: toCinc(result.data, "w", 8), extension: "c.inc" },
+          ],
+          map: [],
+          bitmap: [],
+        };
+      case "asz80":
+      case "z80":
+      case "pyz80":
+        return {
+          tile: [],
+          palette: [
+            { src: toAsm(result.data, "w", 8, format), extension: "asm" },
           ],
           map: [],
           bitmap: [],
@@ -354,7 +414,7 @@ function toSrcFiles(
 
 async function writeFiles(
   srcFiles: SrcFiles,
-  spec: BasicSpriteSpec | BackgroundSpec | SharedPaletteSpriteSpec,
+  spec: BasicSpriteSpec | BackgroundSpec | SharedPaletteSpriteSpec | BitmapSpec | PaletteSpec,
   outputDir: string,
 ) {
   let fileRoot: string;
@@ -434,6 +494,11 @@ async function main(jsonSpec: JsonSpec) {
     const processResult = await processBitmap(bmp);
     const srcFiles = toSrcFiles(processResult, jsonSpec.format);
     await writeFiles(srcFiles, bmp, jsonSpec.outputDir);
+  }
+  for (const palette of jsonSpec.palettes) {
+    const processResult = await processPalette(palette);
+    const srcFiles = toSrcFiles(processResult, jsonSpec.format);
+    await writeFiles(srcFiles, palette, jsonSpec.outputDir);
   }
 }
 

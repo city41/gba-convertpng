@@ -41,6 +41,7 @@ const background_1 = require("./background");
 const c_1 = require("./c");
 const asm_1 = require("./asm");
 const bitmap_1 = require("./bitmap");
+const palette_1 = require("./palette");
 /**
  * Loads the json spec from the file path and converts all file paths
  * inside to absolute paths so the rest of the tool doesn't have to think about it
@@ -92,6 +93,12 @@ function hydrateJsonSpec(jsonSpecPath) {
                 file: path.resolve(rootDir, bmp.file),
             };
         }),
+        palettes: (initialSpec.palettes ?? []).map(p => {
+            return {
+                ...p,
+                file: path.resolve(rootDir, p.file)
+            };
+        })
     };
 }
 function getBitmapDefines(result) {
@@ -132,6 +139,9 @@ function toSrcFiles(result, format) {
     }
     else if ((0, bitmap_1.isProcessBitmapResult)(result)) {
         file = result.bitmap.file;
+    }
+    else if ((0, palette_1.isProcessPaletteResult)(result)) {
+        file = result.palette.file;
     }
     else {
         throw new Error(`toSrcFiles: unexpected object: ${JSON.stringify(result)}`);
@@ -211,6 +221,48 @@ function toSrcFiles(result, format) {
                     tile: [],
                     palette: [
                         { src: (0, asm_1.toAsm)(result.palette, "w", 8, format), extension: "asm" },
+                    ],
+                    map: [],
+                    bitmap: [],
+                };
+            case "bin":
+                throw new Error('gba-convertpng does not support "bin"');
+        }
+    }
+    else if ((0, palette_1.isProcessPaletteResult)(result)) {
+        switch (format) {
+            case "C":
+                return {
+                    tile: [],
+                    palette: [
+                        {
+                            src: (0, c_1.toCc)(result.data, "w", 8, fileRoot + "_palette", fileRoot + ".palette"),
+                            extension: "c",
+                        },
+                        {
+                            src: (0, c_1.toCh)(result.data, "w", fileRoot + "_palette"),
+                            extension: "h",
+                        },
+                    ],
+                    map: [],
+                    bitmap: [],
+                };
+            case "C.inc":
+                return {
+                    tile: [],
+                    palette: [
+                        { src: (0, c_1.toCinc)(result.data, "w", 8), extension: "c.inc" },
+                    ],
+                    map: [],
+                    bitmap: [],
+                };
+            case "asz80":
+            case "z80":
+            case "pyz80":
+                return {
+                    tile: [],
+                    palette: [
+                        { src: (0, asm_1.toAsm)(result.data, "w", 8, format), extension: "asm" },
                     ],
                     map: [],
                     bitmap: [],
@@ -350,6 +402,11 @@ async function main(jsonSpec) {
         const processResult = await (0, bitmap_1.processBitmap)(bmp);
         const srcFiles = toSrcFiles(processResult, jsonSpec.format);
         await writeFiles(srcFiles, bmp, jsonSpec.outputDir);
+    }
+    for (const palette of jsonSpec.palettes) {
+        const processResult = await (0, palette_1.processPalette)(palette);
+        const srcFiles = toSrcFiles(processResult, jsonSpec.format);
+        await writeFiles(srcFiles, palette, jsonSpec.outputDir);
     }
 }
 if (require.main === module) {

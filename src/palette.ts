@@ -1,9 +1,24 @@
 import { createCanvas, Canvas } from "canvas";
 import { rgbToGBA15 } from "./colors";
+import { PaletteSpec, ProcessPaletteResult } from "./types";
+import { createCanvasFromPath } from "./canvas";
 
 const MAGENTA_24: number[] = [255, 0, 255, 255] as const;
 
 const MAGENTA_15 = rgbToGBA15(255, 0, 255);
+
+function isProcessPaletteResult(
+  obj: unknown,
+): obj is ProcessPaletteResult {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "palette" in obj &&
+    typeof obj.palette === "object" &&
+    obj.palette !== null &&
+    "file" in obj.palette
+  );
+}
 
 function is24BitMagenta(color: number[]): boolean {
   return (
@@ -137,4 +152,19 @@ function reduceCanvases(canvases: Canvas[]): {
   };
 }
 
-export { extractPalette, extractPalette15, getForcedPalette, reduceCanvases, MAGENTA_15 };
+async function processPalette(palette: PaletteSpec): Promise<ProcessPaletteResult> {
+  const paletteCanvas = await createCanvasFromPath(palette.file);
+  let paletteData: number[];
+  if (palette.forcePalette) {
+    paletteData = getForcedPalette(paletteCanvas);
+  } else {
+    paletteData = extractPalette(paletteCanvas, !palette.trimPalette);
+  }
+
+  return {
+    palette,
+    data: paletteData
+  };
+}
+
+export { processPalette, isProcessPaletteResult, extractPalette, extractPalette15, getForcedPalette, reduceCanvases, MAGENTA_15 };

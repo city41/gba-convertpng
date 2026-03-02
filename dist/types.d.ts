@@ -8,6 +8,11 @@ export type BasicSpriteSpec = {
     forcePalette?: string;
     transparentColor?: number;
 };
+export type PaletteSpec = {
+    file: string;
+    trimPalette?: boolean;
+    forcePalette?: boolean;
+};
 export type SharedPaletteSpriteSpec = {
     name: string;
     trimPalette?: boolean;
@@ -32,6 +37,7 @@ export type ImportedJsonSpec = {
     sprites?: SpriteSpec[];
     backgrounds?: BackgroundSpec[];
     bitmaps?: BitmapSpec[];
+    palettes?: PaletteSpec[];
 };
 export type JsonSpec = Required<ImportedJsonSpec>;
 export type ProcessBasicSpriteResult = {
@@ -58,4 +64,8 @@ export type ProcessBitmapResult = {
     width: number;
     height: number;
     pixels: number[];
+};
+export type ProcessPaletteResult = {
+    palette: PaletteSpec;
+    data: number[];
 };
