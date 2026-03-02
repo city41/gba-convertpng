@@ -70,6 +70,9 @@ function hydrateJsonSpec(jsonSpecPath: string): JsonSpec {
       return {
         ...bg,
         file: path.resolve(rootDir, bg.file),
+        forcePalette: bg.forcePalette
+          ? path.resolve(rootDir, bg.forcePalette)
+          : undefined,
       };
     }),
     bitmaps: (initialSpec.bitmaps ?? []).map((bmp) => {

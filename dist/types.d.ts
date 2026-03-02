@@ -21,6 +21,7 @@ export type BackgroundSpec = {
     trimPalette?: boolean;
     transparentColor?: number;
     reduceColors?: boolean;
+    forcePalette?: string;
 };
 export type BitmapSpec = {
     file: string;

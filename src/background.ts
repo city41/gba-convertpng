@@ -1,8 +1,8 @@
-import { createCanvasFromPath, reduceColors, roundUpToTileSize } from "./canvas";
+import { createCanvasFromPath, forceCanvasToPalette, reduceColors, roundUpToTileSize } from "./canvas";
 import { BackgroundSpec, ProcessBackgroundResult } from "./types";
 import { rgbToGBA15 } from './colors';
 import { sortBy } from "lodash";
-import { extractPalette15, MAGENTA_15 } from "./palette";
+import { extractPalette15, getForcedPalette, MAGENTA_15 } from "./palette";
 
 type MapEntry = {
     tileIndex: number;
@@ -142,12 +142,18 @@ async function processBackground(bg: BackgroundSpec): Promise<ProcessBackgroundR
     let palettes: number[][] = [];
 
     // first, determine the palettes
-    for (let y = 0; y < canvas.height; y += 8) {
-        for (let x = 0; x < canvas.width; x += 8) {
-            const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
-            const data15 = convertTileTo15Bit(rawTile);
-            const palette = extractPalette15(data15, false);
-            palettes = combinePalettes(palettes.concat([palette]));
+    if (bg.forcePalette) {
+        const forcedPaletteCanvas = await createCanvasFromPath(bg.forcePalette);
+        canvas = await forceCanvasToPalette(canvas, forcedPaletteCanvas);
+        palettes.push(getForcedPalette(forcedPaletteCanvas));
+    } else {
+        for (let y = 0; y < canvas.height; y += 8) {
+            for (let x = 0; x < canvas.width; x += 8) {
+                const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
+                const data15 = convertTileTo15Bit(rawTile);
+                const palette = extractPalette15(data15, false);
+                palettes = combinePalettes(palettes.concat([palette]));
+            }
         }
     }
 

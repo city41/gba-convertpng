@@ -110,12 +110,19 @@ async function processBackground(bg) {
     const tilePalette = [];
     let palettes = [];
     // first, determine the palettes
-    for (let y = 0; y < canvas.height; y += 8) {
-        for (let x = 0; x < canvas.width; x += 8) {
-            const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
-            const data15 = convertTileTo15Bit(rawTile);
-            const palette = (0, palette_1.extractPalette15)(data15, false);
-            palettes = combinePalettes(palettes.concat([palette]));
+    if (bg.forcePalette) {
+        const forcedPaletteCanvas = await (0, canvas_1.createCanvasFromPath)(bg.forcePalette);
+        canvas = await (0, canvas_1.forceCanvasToPalette)(canvas, forcedPaletteCanvas);
+        palettes.push((0, palette_1.getForcedPalette)(forcedPaletteCanvas));
+    }
+    else {
+        for (let y = 0; y < canvas.height; y += 8) {
+            for (let x = 0; x < canvas.width; x += 8) {
+                const rawTile = Array.from(ctx.getImageData(x, y, 8, 8).data);
+                const data15 = convertTileTo15Bit(rawTile);
+                const palette = (0, palette_1.extractPalette15)(data15, false);
+                palettes = combinePalettes(palettes.concat([palette]));
+            }
         }
     }
     // now with palettes in hand, do the rest
