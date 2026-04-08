@@ -27,8 +27,8 @@ function convertTileTo15Bit(rawTile) {
     return data15;
 }
 function getTileIndex(tilePalette, tile) {
-    const index = tilePalette.findIndex(t => {
-        return t.join('-') === tile.join('-');
+    const index = tilePalette.findIndex((t) => {
+        return t.join("-") === tile.join("-");
     });
     if (index > -1) {
         return index;
@@ -36,7 +36,7 @@ function getTileIndex(tilePalette, tile) {
     tilePalette.push([...tile]);
     return tilePalette.length - 1;
 }
-// looks through all the palettes and combines multiple palettes into one 
+// looks through all the palettes and combines multiple palettes into one
 // based on how much room they have.
 // example, palette-a has 4 colors, palette-b has 6, result is a palette with 10 colors
 // possibly the two palettes share colors, only one copy of each color will be preserved
@@ -46,12 +46,12 @@ function combinePalettes(palettes) {
     if (palettes.length <= 1) {
         return palettes;
     }
-    const sortedPalettes = (0, lodash_1.sortBy)(palettes, p => p.length);
+    const sortedPalettes = (0, lodash_1.sortBy)(palettes, (p) => p.length);
     let firstPalette = sortedPalettes[0];
     const remainingPalettes = [];
     for (let p = 1; p < sortedPalettes.length; ++p) {
         const otherPalette = sortedPalettes[p];
-        const otherPaletteUniqueColors = otherPalette.filter(c => !firstPalette.includes(c));
+        const otherPaletteUniqueColors = otherPalette.filter((c) => !firstPalette.includes(c));
         if (firstPalette.length + otherPaletteUniqueColors.length < 16) {
             firstPalette = firstPalette.concat(otherPaletteUniqueColors);
         }
@@ -69,7 +69,7 @@ function buildMap(tiles, bgWidthPx, bgHeightPx) {
     for (let y = 0; y < bgHeightT; ++y) {
         for (let x = 0; x < bgWidthT; ++x) {
             const tile = tiles[y * bgWidthT + x];
-            map.push(tile.paletteIndex << 12 | tile.tileIndex);
+            map.push((tile.paletteIndex << 12) | tile.tileIndex);
         }
     }
     return map;
@@ -79,17 +79,17 @@ function getGBATile(data15, palette) {
     for (let p = 0; p < data15.length; p += 2) {
         const highNibble = palette.indexOf(data15[p + 1]);
         const lowNibble = palette.indexOf(data15[p]);
-        const byte = (highNibble & 0xf) << 4 | (lowNibble & 0xf);
+        const byte = ((highNibble & 0xf) << 4) | (lowNibble & 0xf);
         gbaTile.push(byte);
     }
     return gbaTile;
 }
 function findMatchingPalette(data15, palettes) {
-    const foundPalette = palettes.find(palette => {
-        return data15.every(c => palette.includes(c));
+    const foundPalette = palettes.find((palette) => {
+        return data15.every((c) => palette.includes(c));
     });
     if (!foundPalette) {
-        throw new Error('findMatchingPalette: failed to find a palette');
+        throw new Error("findMatchingPalette: failed to find a palette");
     }
     return foundPalette;
 }
@@ -101,11 +101,15 @@ function padPalette(palette) {
 }
 async function processBackground(bg) {
     let canvas = await (0, canvas_1.createCanvasFromPath)(bg.file);
+    const colorCount = (0, palette_1.extractPalette)(canvas, false).length;
+    if (bg.forcePalette && colorCount > 15) {
+        throw new Error(`Background with forcedPalette set, but image has ${colorCount} colors, ${bg.file}`);
+    }
     if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
         canvas = await (0, canvas_1.reduceColors)(canvas, 16);
     }
     canvas = (0, canvas_1.roundUpToTileSize)(canvas);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     const tiles = [];
     const tilePalette = [];
     let palettes = [];
@@ -144,13 +148,16 @@ async function processBackground(bg) {
     const paletteData = palettes.map(padPalette).flat(1);
     const paletteCount = palettes.length;
     const map = buildMap(tiles, canvas.width, canvas.height);
+    if (typeof bg.transparentColor === "number") {
+        paletteData[0] = bg.transparentColor;
+    }
     return {
         background: bg,
         canvas,
         map,
         palette: paletteData,
         paletteCount,
-        tiles: tileData
+        tiles: tileData,
     };
 }
 //# sourceMappingURL=background.js.map

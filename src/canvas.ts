@@ -119,11 +119,13 @@ function findNearestColor(
 
   const nearestResult = nearestColor(pixelInput, colorsInput);
 
-  pixel[0] = (nearestResult as ColorMatch).rgb.r;
-  pixel[1] = (nearestResult as ColorMatch).rgb.g;
-  pixel[2] = (nearestResult as ColorMatch).rgb.b;
+  const nearestPixel = new Array(4);
+  nearestPixel[0] = (nearestResult as ColorMatch).rgb.r;
+  nearestPixel[1] = (nearestResult as ColorMatch).rgb.g;
+  nearestPixel[2] = (nearestResult as ColorMatch).rgb.b;
+  nearestPixel[3] = 255;
 
-  return pixel;
+  return Uint8ClampedArray.from(nearestPixel);
 }
 
 function isMagenta(pixel: Uint8ClampedArray): boolean {

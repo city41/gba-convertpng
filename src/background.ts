@@ -7,7 +7,12 @@ import {
 import { BackgroundSpec, ProcessBackgroundResult } from "./types";
 import { rgbToGBA15 } from "./colors";
 import { sortBy } from "lodash";
-import { extractPalette15, getForcedPalette, MAGENTA_15 } from "./palette";
+import {
+  extractPalette,
+  extractPalette15,
+  getForcedPalette,
+  MAGENTA_15,
+} from "./palette";
 
 type MapEntry = {
   tileIndex: number;
@@ -140,6 +145,13 @@ async function processBackground(
   bg: BackgroundSpec,
 ): Promise<ProcessBackgroundResult> {
   let canvas = await createCanvasFromPath(bg.file);
+
+  const colorCount = extractPalette(canvas, false).length;
+  if (bg.forcePalette && colorCount > 15) {
+    throw new Error(
+      `Background with forcedPalette set, but image has ${colorCount} colors, ${bg.file}`,
+    );
+  }
 
   if (typeof bg.reduceColors === "undefined" || bg.reduceColors === true) {
     canvas = await reduceColors(canvas, 16);
