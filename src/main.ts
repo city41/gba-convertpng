@@ -25,10 +25,7 @@ import {
   processSharedPaletteSprites,
   ProcessSharedPaletteSpritesResult,
 } from "./sprite";
-import {
-  isProcessBackgroundResult,
-  processBackground
-} from "./background";
+import { isProcessBackgroundResult, processBackground } from "./background";
 import { toCc, toCh, toCinc } from "./c";
 import { toAsm } from "./asm";
 import { isProcessBitmapResult, processBitmap } from "./bitmap";
@@ -85,12 +82,12 @@ function hydrateJsonSpec(jsonSpecPath: string): JsonSpec {
         file: path.resolve(rootDir, bmp.file),
       };
     }),
-    palettes: (initialSpec.palettes ?? []).map(p => {
+    palettes: (initialSpec.palettes ?? []).map((p) => {
       return {
         ...p,
-        file: path.resolve(rootDir, p.file)
+        file: path.resolve(rootDir, p.file),
       };
-    })
+    }),
   };
 }
 
@@ -115,9 +112,12 @@ function getBitmapDefines(result: ProcessBitmapResult): string {
 #define ${name.toUpperCase()}_HEIGHT ${result.height}`;
 }
 
-function getPaletteDefines(result: ProcessBackgroundResult | ProcessBasicSpriteResult, file: string): string {
+function getPaletteDefines(
+  result: ProcessBackgroundResult | ProcessBasicSpriteResult,
+  file: string,
+): string {
   if (isProcessBasicSpriteResult(result)) {
-    return '';
+    return "";
   }
 
   const name = path.basename(file, ".png");
@@ -129,7 +129,7 @@ function getTileDefines(
   file: string,
 ): string {
   const name = path.basename(file, ".png");
-  let tileWidth = result.canvas.width / 8;
+  let allFrameTileWidth = result.canvas.width / 8;
   let tileHeight = result.canvas.height / 8;
 
   let frameCountSrc = "";
@@ -140,7 +140,15 @@ function getTileDefines(
     frameCountSrc = `\n#define ${name.toUpperCase()}_FRAME_COUNT ${result.sprite.frames}`;
   }
 
-  return `#define ${name.toUpperCase()}_TILE_WIDTH ${tileWidth / frameCount}
+  let singleFrameTileWidth = allFrameTileWidth / frameCount;
+
+  if (singleFrameTileWidth != Math.floor(singleFrameTileWidth)) {
+    throw new Error(
+      `getTileDefines, tile width is not an integer, got: ${singleFrameTileWidth}`,
+    );
+  }
+
+  return `#define ${name.toUpperCase()}_TILE_WIDTH ${singleFrameTileWidth}
 #define ${name.toUpperCase()}_TILE_HEIGHT ${tileHeight}${frameCountSrc}`;
 }
 
@@ -294,9 +302,7 @@ function toSrcFiles(
       case "C.inc":
         return {
           tile: [],
-          palette: [
-            { src: toCinc(result.data, "w", 8), extension: "c.inc" },
-          ],
+          palette: [{ src: toCinc(result.data, "w", 8), extension: "c.inc" }],
           map: [],
           bitmap: [],
         };
@@ -341,40 +347,45 @@ function toSrcFiles(
           ],
           palette: result.palette
             ? [
-              {
-                src: toCc(
-                  result.palette,
-                  "w",
-                  8,
-                  fileRoot + "_palette",
-                  fileRoot + ".palette",
-                ),
-                extension: "c",
-              },
-              {
-                src: toCh(result.palette, "w", fileRoot + "_palette", getPaletteDefines(result, file)),
-                extension: "h",
-              },
-            ]
-            : [],
-          map:
-            "background" in result
-              ? [
                 {
                   src: toCc(
-                    result.map,
+                    result.palette,
                     "w",
                     8,
-                    fileRoot + "_map",
-                    fileRoot + ".map",
+                    fileRoot + "_palette",
+                    fileRoot + ".palette",
                   ),
                   extension: "c",
                 },
                 {
-                  src: toCh(result.map, "w", fileRoot + "_map"),
+                  src: toCh(
+                    result.palette,
+                    "w",
+                    fileRoot + "_palette",
+                    getPaletteDefines(result, file),
+                  ),
                   extension: "h",
                 },
               ]
+            : [],
+          map:
+            "background" in result
+              ? [
+                  {
+                    src: toCc(
+                      result.map,
+                      "w",
+                      8,
+                      fileRoot + "_map",
+                      fileRoot + ".map",
+                    ),
+                    extension: "c",
+                  },
+                  {
+                    src: toCh(result.map, "w", fileRoot + "_map"),
+                    extension: "h",
+                  },
+                ]
               : [],
           bitmap: [],
         };
@@ -414,7 +425,12 @@ function toSrcFiles(
 
 async function writeFiles(
   srcFiles: SrcFiles,
-  spec: BasicSpriteSpec | BackgroundSpec | SharedPaletteSpriteSpec | BitmapSpec | PaletteSpec,
+  spec:
+    | BasicSpriteSpec
+    | BackgroundSpec
+    | SharedPaletteSpriteSpec
+    | BitmapSpec
+    | PaletteSpec,
   outputDir: string,
 ) {
   let fileRoot: string;
