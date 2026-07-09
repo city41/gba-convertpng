@@ -1,19 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processBackground = processBackground;
-exports.isProcessBackgroundResult = isProcessBackgroundResult;
 const canvas_1 = require("./canvas");
 const colors_1 = require("./colors");
 const lodash_1 = require("lodash");
 const palette_1 = require("./palette");
-function isProcessBackgroundResult(obj) {
-    return (obj !== null &&
-        typeof obj === "object" &&
-        "background" in obj &&
-        typeof obj.background === "object" &&
-        obj.background !== null &&
-        "file" in obj.background);
-}
 function convertTileTo15Bit(rawTile) {
     const data15 = [];
     for (let p = 0; p < rawTile.length; p += 4) {
@@ -152,7 +143,8 @@ async function processBackground(bg) {
         paletteData[0] = bg.transparentColor;
     }
     return {
-        background: bg,
+        type: "Background",
+        spec: bg,
         canvas,
         map,
         palette: paletteData,

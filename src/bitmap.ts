@@ -2,17 +2,6 @@ import { createCanvasFromPath } from "./canvas";
 import { rgbToGBA15 } from "./colors";
 import { BitmapSpec, ProcessBitmapResult } from "./types";
 
-function isProcessBitmapResult(obj: unknown): obj is ProcessBitmapResult {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    "bitmap" in obj &&
-    typeof obj.bitmap === "object" &&
-    obj.bitmap !== null &&
-    "file" in obj.bitmap
-  );
-}
-
 async function processBitmap(bmp: BitmapSpec): Promise<ProcessBitmapResult> {
   const canvas = await createCanvasFromPath(bmp.file);
   const context = canvas.getContext("2d")!;
@@ -35,11 +24,12 @@ async function processBitmap(bmp: BitmapSpec): Promise<ProcessBitmapResult> {
   }
 
   return {
-    bitmap: bmp,
+    type: "Bitmap",
+    spec: bmp,
     width: canvas.width,
     height: canvas.height,
     pixels,
   };
 }
 
-export { processBitmap, isProcessBitmapResult };
+export { processBitmap };

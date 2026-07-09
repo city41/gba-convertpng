@@ -38,34 +38,56 @@ export type ImportedJsonSpec = {
     backgrounds?: BackgroundSpec[];
     bitmaps?: BitmapSpec[];
     palettes?: PaletteSpec[];
+    exportResultsPath?: string;
 };
-export type JsonSpec = Required<ImportedJsonSpec>;
+export type SrcFile = {
+    src: string;
+    extension: string;
+};
+export type SrcFiles = {
+    tile: SrcFile[];
+    palette: SrcFile[];
+    map: SrcFile[];
+    bitmap: SrcFile[];
+};
+export type WriteFiles = (srcFiles: SrcFiles, spec: BasicSpriteSpec | BackgroundSpec | SharedPaletteSpriteSpec | BitmapSpec | PaletteSpec, outputDir: string) => Promise<void>;
+export type ToSrcFiles = (result: ProcessBasicSpriteResult | ProcessBackgroundResult | ProcessSharedPaletteSpritesResult | ProcessBitmapResult | ProcessPaletteResult, format: Format) => SrcFiles;
+export type ExportResults = (results: ProcessResult[], spec: JsonSpec, writeFiles: WriteFiles, toSrcFiles: ToSrcFiles) => Promise<void>;
+export type JsonSpec = Required<Omit<ImportedJsonSpec, "exportResultsPath">> & {
+    exportResults: ExportResults;
+};
 export type ProcessBasicSpriteResult = {
-    sprite: BasicSpriteSpec;
+    type: "BasicSprite";
+    spec: BasicSpriteSpec;
     canvas: Canvas;
     tiles: number[];
     palette?: number[];
 };
 export type ProcessSharedPaletteSpritesResult = {
-    sprite: SharedPaletteSpriteSpec;
+    type: "SharedPaletteSprites";
+    spec: SharedPaletteSpriteSpec;
     subsprites: ProcessBasicSpriteResult[];
     palette: number[];
 };
 export type ProcessBackgroundResult = {
+    type: "Background";
     canvas: Canvas;
-    background: BackgroundSpec;
+    spec: BackgroundSpec;
     tiles: number[];
     palette: number[];
     paletteCount: number;
     map: number[];
 };
 export type ProcessBitmapResult = {
-    bitmap: BitmapSpec;
+    type: "Bitmap";
+    spec: BitmapSpec;
     width: number;
     height: number;
     pixels: number[];
 };
 export type ProcessPaletteResult = {
-    palette: PaletteSpec;
+    type: "Palette";
+    spec: PaletteSpec;
     data: number[];
 };
+export type ProcessResult = ProcessBasicSpriteResult | ProcessSharedPaletteSpritesResult | ProcessBackgroundResult | ProcessBitmapResult | ProcessPaletteResult;

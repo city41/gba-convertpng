@@ -1,30 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isBasicSpriteSpec = isBasicSpriteSpec;
+exports.isSharedPaletteSpriteSpec = isSharedPaletteSpriteSpec;
 exports.processBasicSprite = processBasicSprite;
 exports.processSharedPaletteSprites = processSharedPaletteSprites;
-exports.isSharedPaletteSpriteSpec = isSharedPaletteSpriteSpec;
-exports.isProcessBasicSpriteResult = isProcessBasicSpriteResult;
-exports.isProcessSharedPaletteSpritesResult = isProcessSharedPaletteSpritesResult;
 const canvas_1 = require("./canvas");
 const palette_1 = require("./palette");
 const tile_1 = require("./tile");
 function isSharedPaletteSpriteSpec(obj) {
     return typeof obj === "object" && obj !== null && "name" in obj;
-}
-function isProcessBasicSpriteResult(obj) {
-    return (obj !== null &&
-        typeof obj === "object" &&
-        "sprite" in obj &&
-        typeof obj.sprite === "object" &&
-        obj.sprite !== null &&
-        "file" in obj.sprite);
-}
-function isProcessSharedPaletteSpritesResult(obj) {
-    return (obj !== null &&
-        typeof obj === "object" &&
-        "sprite" in obj &&
-        isSharedPaletteSpriteSpec(obj.sprite));
 }
 function isBasicSpriteSpec(sprite) {
     return "file" in sprite;
@@ -50,7 +34,8 @@ async function processBasicSprite(sprite, forcedPaletteOverride) {
         palette[0] = sprite.transparentColor;
     }
     return {
-        sprite,
+        type: "BasicSprite",
+        spec: sprite,
         canvas,
         tiles,
         palette,
@@ -95,7 +80,8 @@ async function processSharedPaletteSprites(sharedPaletteSprite) {
         commonPalette[0] = sharedPaletteSprite.transparentColor;
     }
     return {
-        sprite: sharedPaletteSprite,
+        type: "SharedPaletteSprites",
+        spec: sharedPaletteSprite,
         palette: commonPalette,
         subsprites: subspriteResults,
     };

@@ -21,30 +21,6 @@ function isSharedPaletteSpriteSpec(
   return typeof obj === "object" && obj !== null && "name" in obj;
 }
 
-function isProcessBasicSpriteResult(
-  obj: unknown,
-): obj is ProcessBasicSpriteResult {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    "sprite" in obj &&
-    typeof obj.sprite === "object" &&
-    obj.sprite !== null &&
-    "file" in obj.sprite
-  );
-}
-
-function isProcessSharedPaletteSpritesResult(
-  obj: unknown,
-): obj is ProcessSharedPaletteSpritesResult {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    "sprite" in obj &&
-    isSharedPaletteSpriteSpec(obj.sprite)
-  );
-}
-
 function isBasicSpriteSpec(sprite: SpriteSpec): sprite is BasicSpriteSpec {
   return "file" in sprite;
 }
@@ -77,7 +53,8 @@ async function processBasicSprite(
   }
 
   return {
-    sprite,
+    type: "BasicSprite",
+    spec: sprite,
     canvas,
     tiles,
     palette,
@@ -141,7 +118,8 @@ async function processSharedPaletteSprites(
   }
 
   return {
-    sprite: sharedPaletteSprite,
+    type: "SharedPaletteSprites",
+    spec: sharedPaletteSprite,
     palette: commonPalette,
     subsprites: subspriteResults,
   };
@@ -149,10 +127,8 @@ async function processSharedPaletteSprites(
 
 export {
   isBasicSpriteSpec,
+  isSharedPaletteSpriteSpec,
   processBasicSprite,
   processSharedPaletteSprites,
-  isSharedPaletteSpriteSpec,
-  isProcessBasicSpriteResult,
-  isProcessSharedPaletteSpritesResult,
 };
 export type { ProcessBasicSpriteResult, ProcessSharedPaletteSpritesResult };

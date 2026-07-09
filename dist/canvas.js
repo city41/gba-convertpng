@@ -118,7 +118,6 @@ function findNearestColor(pixel, palette) {
 function isMagenta(pixel) {
     return pixel[0] === 255 && pixel[1] === 0 && pixel[2] === 255;
 }
-let c = 0;
 async function forceCanvasToPalette(canvas, palette) {
     if (palette.width !== 15) {
         throw new Error(`forceCanvasToPalette: palette needs to be 15px wide (got ${palette.width}, it should not have zero/magenta in it)`);
@@ -138,14 +137,9 @@ async function forceCanvasToPalette(canvas, palette) {
             continue;
         }
         const nearestPixel = findNearestColor(pixel, paletteImageData.data);
-        if (c === 111 && pixel[0] === 33) {
-            console.log(JSON.stringify({ nearestPixel, pixel }));
-        }
         canvasImageData.data.set(nearestPixel, p);
     }
     canvas.getContext("2d").putImageData(canvasImageData, 0, 0);
-    const buffer = canvas.toBuffer();
-    await fsp.writeFile(`/home/matt/tmp/canvas${c++}.png`, buffer);
     return canvas;
 }
 // given an input canvas, returns it with additional pixels to

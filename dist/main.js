@@ -42,6 +42,16 @@ const c_1 = require("./c");
 const asm_1 = require("./asm");
 const bitmap_1 = require("./bitmap");
 const palette_1 = require("./palette");
+function getExportResultsFunction(spec, rootDir) {
+    let exportResults;
+    if (spec.exportResultsPath) {
+        exportResults = require(path.resolve(rootDir, spec.exportResultsPath));
+    }
+    else {
+        exportResults = defaultExportResults;
+    }
+    return exportResults;
+}
 /**
  * Loads the json spec from the file path and converts all file paths
  * inside to absolute paths so the rest of the tool doesn't have to think about it
@@ -49,8 +59,10 @@ const palette_1 = require("./palette");
 function hydrateJsonSpec(jsonSpecPath) {
     const rootDir = path.dirname(jsonSpecPath);
     const initialSpec = require(jsonSpecPath);
+    const exportResults = getExportResultsFunction(initialSpec, rootDir);
     return {
         ...initialSpec,
+        exportResults,
         outputDir: path.resolve(rootDir, initialSpec.outputDir),
         format: initialSpec.format ?? "z80",
         sprites: (initialSpec.sprites ?? []).map((s) => {
@@ -93,61 +105,53 @@ function hydrateJsonSpec(jsonSpecPath) {
                 file: path.resolve(rootDir, bmp.file),
             };
         }),
-        palettes: (initialSpec.palettes ?? []).map(p => {
+        palettes: (initialSpec.palettes ?? []).map((p) => {
             return {
                 ...p,
-                file: path.resolve(rootDir, p.file)
+                file: path.resolve(rootDir, p.file),
             };
-        })
+        }),
     };
 }
 function getBitmapDefines(result) {
-    const name = path.basename(result.bitmap.file, path.extname(result.bitmap.file));
+    const name = path.basename(result.spec.file, path.extname(result.spec.file));
     return `#define ${name.toUpperCase()}_WIDTH ${result.width}
 #define ${name.toUpperCase()}_HEIGHT ${result.height}`;
 }
 function getPaletteDefines(result, file) {
-    if ((0, sprite_1.isProcessBasicSpriteResult)(result)) {
-        return '';
+    if (result.type === "BasicSprite") {
+        return "";
     }
     const name = path.basename(file, ".png");
     return `#define ${name.toUpperCase()}_NUM_PALETTES ${result.paletteCount}`;
 }
 function getTileDefines(result, file) {
     const name = path.basename(file, ".png");
-    let tileWidth = result.canvas.width / 8;
+    let allFrameTileWidth = result.canvas.width / 8;
     let tileHeight = result.canvas.height / 8;
     let frameCountSrc = "";
     let frameCount = 1;
-    if ((0, sprite_1.isProcessBasicSpriteResult)(result)) {
-        frameCount = result.sprite.frames;
-        frameCountSrc = `\n#define ${name.toUpperCase()}_FRAME_COUNT ${result.sprite.frames}`;
+    if (result.type == "BasicSprite") {
+        frameCount = result.spec.frames;
+        frameCountSrc = `\n#define ${name.toUpperCase()}_FRAME_COUNT ${frameCount}`;
     }
-    return `#define ${name.toUpperCase()}_TILE_WIDTH ${tileWidth / frameCount}
+    let singleFrameTileWidth = allFrameTileWidth / frameCount;
+    if (singleFrameTileWidth != Math.floor(singleFrameTileWidth)) {
+        throw new Error(`getTileDefines, tile width is not an integer, got: ${singleFrameTileWidth}`);
+    }
+    return `#define ${name.toUpperCase()}_TILE_WIDTH ${singleFrameTileWidth}
 #define ${name.toUpperCase()}_TILE_HEIGHT ${tileHeight}${frameCountSrc}`;
 }
 function toSrcFiles(result, format) {
     let file;
-    if ((0, sprite_1.isProcessBasicSpriteResult)(result)) {
-        file = result.sprite.file;
-    }
-    else if ((0, background_1.isProcessBackgroundResult)(result)) {
-        file = result.background.file;
-    }
-    else if ((0, sprite_1.isProcessSharedPaletteSpritesResult)(result)) {
-        file = result.sprite.name;
-    }
-    else if ((0, bitmap_1.isProcessBitmapResult)(result)) {
-        file = result.bitmap.file;
-    }
-    else if ((0, palette_1.isProcessPaletteResult)(result)) {
-        file = result.palette.file;
+    if (result.type == "SharedPaletteSprites") {
+        file = result.spec.name;
     }
     else {
-        throw new Error(`toSrcFiles: unexpected object: ${JSON.stringify(result)}`);
+        file = result.spec.file;
     }
     const fileRoot = path.basename(file, path.extname(file));
-    if ((0, bitmap_1.isProcessBitmapResult)(result)) {
+    if (result.type === "Bitmap") {
         switch (format) {
             case "C":
                 return {
@@ -187,7 +191,7 @@ function toSrcFiles(result, format) {
                 throw new Error('gba-convertpng does not support "bin"');
         }
     }
-    else if ((0, sprite_1.isProcessSharedPaletteSpritesResult)(result)) {
+    else if (result.type === "SharedPaletteSprites") {
         switch (format) {
             case "C":
                 return {
@@ -229,7 +233,7 @@ function toSrcFiles(result, format) {
                 throw new Error('gba-convertpng does not support "bin"');
         }
     }
-    else if ((0, palette_1.isProcessPaletteResult)(result)) {
+    else if (result.type === "Palette") {
         switch (format) {
             case "C":
                 return {
@@ -250,9 +254,7 @@ function toSrcFiles(result, format) {
             case "C.inc":
                 return {
                     tile: [],
-                    palette: [
-                        { src: (0, c_1.toCinc)(result.data, "w", 8), extension: "c.inc" },
-                    ],
+                    palette: [{ src: (0, c_1.toCinc)(result.data, "w", 8), extension: "c.inc" }],
                     map: [],
                     bitmap: [],
                 };
@@ -297,7 +299,7 @@ function toSrcFiles(result, format) {
                             },
                         ]
                         : [],
-                    map: "background" in result
+                    map: result.type === "Background"
                         ? [
                             {
                                 src: (0, c_1.toCc)(result.map, "w", 8, fileRoot + "_map", fileRoot + ".map"),
@@ -317,7 +319,7 @@ function toSrcFiles(result, format) {
                     palette: result.palette
                         ? [{ src: (0, c_1.toCinc)(result.palette, "w", 8), extension: "c.inc" }]
                         : [],
-                    map: "background" in result
+                    map: result.type === "Background"
                         ? [{ src: (0, c_1.toCinc)(result.map, "w", 8), extension: "c.inc" }]
                         : [],
                     bitmap: [],
@@ -332,7 +334,7 @@ function toSrcFiles(result, format) {
                     palette: result.palette
                         ? [{ src: (0, asm_1.toAsm)(result.palette, "w", 8, format), extension: "asm" }]
                         : [],
-                    map: "background" in result
+                    map: result.type === "Background"
                         ? [{ src: (0, asm_1.toAsm)(result.map, "w", 8, format), extension: "asm" }]
                         : [],
                     bitmap: [],
@@ -373,41 +375,47 @@ async function writeFiles(srcFiles, spec, outputDir) {
         console.log("wrote", bitmapOutputPath);
     }
 }
+async function defaultExportResults(results, spec, writeFiles, toSrcFiles) {
+    for (let i = 0; i < results.length; ++i) {
+        const result = results[i];
+        const srcFiles = toSrcFiles(result, spec.format);
+        await writeFiles(srcFiles, result.spec, spec.outputDir);
+        if (result.type === "SharedPaletteSprites") {
+            for (const processSubResult of result.subsprites) {
+                const srcFiles = toSrcFiles(processSubResult, spec.format);
+                await writeFiles(srcFiles, processSubResult.spec, spec.outputDir);
+            }
+        }
+    }
+}
 async function main(jsonSpec) {
     if (jsonSpec.format === "bin") {
         throw new Error("convertpng does not support bin format");
     }
+    const results = [];
     for (const sprite of jsonSpec.sprites) {
         if ((0, sprite_1.isBasicSpriteSpec)(sprite)) {
             const processResult = await (0, sprite_1.processBasicSprite)(sprite);
-            const srcFiles = toSrcFiles(processResult, jsonSpec.format);
-            await writeFiles(srcFiles, sprite, jsonSpec.outputDir);
+            results.push(processResult);
         }
         else {
             const processResult = await (0, sprite_1.processSharedPaletteSprites)(sprite);
-            const srcFiles = toSrcFiles(processResult, jsonSpec.format);
-            await writeFiles(srcFiles, processResult.sprite, jsonSpec.outputDir);
-            for (const processSubResult of processResult.subsprites) {
-                const srcFiles = toSrcFiles(processSubResult, jsonSpec.format);
-                await writeFiles(srcFiles, processSubResult.sprite, jsonSpec.outputDir);
-            }
+            results.push(processResult);
         }
     }
     for (const bg of jsonSpec.backgrounds) {
         const processResult = await (0, background_1.processBackground)(bg);
-        const srcFiles = toSrcFiles(processResult, jsonSpec.format);
-        await writeFiles(srcFiles, bg, jsonSpec.outputDir);
+        results.push(processResult);
     }
     for (const bmp of jsonSpec.bitmaps) {
         const processResult = await (0, bitmap_1.processBitmap)(bmp);
-        const srcFiles = toSrcFiles(processResult, jsonSpec.format);
-        await writeFiles(srcFiles, bmp, jsonSpec.outputDir);
+        results.push(processResult);
     }
     for (const palette of jsonSpec.palettes) {
         const processResult = await (0, palette_1.processPalette)(palette);
-        const srcFiles = toSrcFiles(processResult, jsonSpec.format);
-        await writeFiles(srcFiles, palette, jsonSpec.outputDir);
+        results.push(processResult);
     }
+    jsonSpec.exportResults(results, jsonSpec, writeFiles, toSrcFiles);
 }
 if (require.main === module) {
     const [_tsNode, _convertpng, jsonSpecPath] = process.argv;

@@ -1,17 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processBitmap = processBitmap;
-exports.isProcessBitmapResult = isProcessBitmapResult;
 const canvas_1 = require("./canvas");
 const colors_1 = require("./colors");
-function isProcessBitmapResult(obj) {
-    return (obj !== null &&
-        typeof obj === "object" &&
-        "bitmap" in obj &&
-        typeof obj.bitmap === "object" &&
-        obj.bitmap !== null &&
-        "file" in obj.bitmap);
-}
 async function processBitmap(bmp) {
     const canvas = await (0, canvas_1.createCanvasFromPath)(bmp.file);
     const context = canvas.getContext("2d");
@@ -22,7 +13,8 @@ async function processBitmap(bmp) {
         pixels.push(gbaColor);
     }
     return {
-        bitmap: bmp,
+        type: "Bitmap",
+        spec: bmp,
         width: canvas.width,
         height: canvas.height,
         pixels,

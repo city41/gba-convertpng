@@ -19,19 +19,6 @@ type MapEntry = {
   paletteIndex: number;
 };
 
-function isProcessBackgroundResult(
-  obj: unknown,
-): obj is ProcessBackgroundResult {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    "background" in obj &&
-    typeof obj.background === "object" &&
-    obj.background !== null &&
-    "file" in obj.background
-  );
-}
-
 function convertTileTo15Bit(rawTile: number[]): number[] {
   const data15: number[] = [];
 
@@ -207,7 +194,8 @@ async function processBackground(
   }
 
   return {
-    background: bg,
+    type: "Background",
+    spec: bg,
     canvas,
     map,
     palette: paletteData,
@@ -216,4 +204,4 @@ async function processBackground(
   };
 }
 
-export { processBackground, isProcessBackgroundResult };
+export { processBackground };
